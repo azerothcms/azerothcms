@@ -7,6 +7,7 @@ import type {
   AdminUserSummary,
   CharacterSummary,
   ForumCategory,
+  ForumReply,
   ForumThread,
   NewsArticle,
   PlayerProfile,
@@ -46,6 +47,41 @@ interface NewsRow extends RowDataPacket {
   featured: number
   accent: NewsArticle["accent"]
   status: NewsArticle["status"]
+}
+
+interface ForumCategoryRow extends RowDataPacket {
+  id: string
+  slug: string
+  name: string
+  description: string
+  accent: ForumCategory["accent"]
+  thread_count: number | string
+  latest_thread: string | null
+}
+
+interface ForumThreadRow extends RowDataPacket {
+  id: string
+  slug: string
+  category_slug: string
+  category_name: string
+  author_account_id: number | null
+  title: string
+  excerpt: string
+  body: unknown
+  tags: unknown
+  is_pinned: number
+  is_hot: number
+  view_count: number | string
+  replies: number | string
+  created_at: Date | string
+  updated_at: Date | string
+}
+
+interface ForumReplyRow extends RowDataPacket {
+  id: number | string
+  author_account_id: number
+  body: string
+  created_at: Date | string
 }
 
 interface CharacterRow extends RowDataPacket {
@@ -334,6 +370,123 @@ async function getLiveNews(includeDrafts = false): Promise<NewsArticle[] | undef
   }
 }
 
+async function getLiveForumCategories(): Promise<ForumCategory[] | undefined> {
+  try {
+    const [rows] = await cmsDb.execute<ForumCategoryRow[]>(
+      `SELECT c.id, c.slug, c.name, c.description, c.accent,
+              COUNT(t.id) AS thread_count,
+              (SELECT latest.title
+               FROM forum_thread latest
+               WHERE latest.category_id = c.id
+               ORDER BY latest.updated_at DESC
+               LIMIT 1) AS latest_thread
+       FROM forum_category c
+       LEFT JOIN forum_thread t ON t.category_id = c.id
+       GROUP BY c.id, c.slug, c.name, c.description, c.accent, c.created_at
+       ORDER BY c.created_at`
+    )
+
+    if (!rows.length) {
+      return undefined
+    }
+
+    return rows.map<ForumCategory>((category) => ({
+      id: category.id,
+      slug: category.slug,
+      name: category.name,
+      description: category.description,
+      accent: category.accent,
+      threadCount: Number(category.thread_count),
+      latestThread: category.latest_thread ?? "暂无主题",
+    }))
+  } catch (error) {
+    if (!isDatabaseConfigurationError(error)) {
+      console.error("Failed to read CMS forum categories", error)
+    }
+
+    return undefined
+  }
+}
+
+async function getLiveForumThreads(): Promise<ForumThread[] | undefined> {
+  try {
+    const [rows] = await cmsDb.execute<ForumThreadRow[]>(
+      `SELECT c.slug AS category_slug, c.name AS category_name,
+              t.id, t.slug, t.author_account_id, t.title, t.excerpt,
+              t.body, t.tags, t.is_pinned, t.is_hot, t.view_count,
+              (SELECT COUNT(*) FROM forum_reply r WHERE r.thread_id = t.id) AS replies,
+              t.created_at, t.updated_at
+       FROM forum_thread t
+       INNER JOIN forum_category c ON c.id = t.category_id
+       ORDER BY t.is_pinned DESC, t.updated_at DESC`
+    )
+
+    if (!rows.length) {
+      return undefined
+    }
+
+    return rows.map<ForumThread>((thread) => ({
+      id: thread.id,
+      slug: thread.slug,
+      categorySlug: thread.category_slug,
+      categoryName: thread.category_name,
+      title: thread.title,
+      excerpt: thread.excerpt,
+      author: thread.author_account_id ? `玩家 ${thread.author_account_id}` : "社区成员",
+      authorRole: thread.author_account_id ? "社区成员" : "官方团队",
+      replies: Number(thread.replies),
+      views: Number(thread.view_count),
+      lastActivity: String(thread.updated_at),
+      createdAt: String(thread.created_at),
+      isPinned: Boolean(thread.is_pinned),
+      isHot: Boolean(thread.is_hot),
+      tags: parseStringArray(thread.tags),
+      body: parseStringArray(thread.body),
+    }))
+  } catch (error) {
+    if (!isDatabaseConfigurationError(error)) {
+      console.error("Failed to read CMS forum threads", error)
+    }
+
+    return undefined
+  }
+}
+
+async function getLiveForumThread(slug: string): Promise<ForumThread | undefined> {
+  const threads = await getLiveForumThreads()
+  const thread = threads?.find((candidate) => candidate.slug === slug)
+
+  if (!thread) {
+    return undefined
+  }
+
+  try {
+    const [rows] = await cmsDb.execute<ForumReplyRow[]>(
+      `SELECT id, author_account_id, body, created_at
+       FROM forum_reply
+       WHERE thread_id = ?
+       ORDER BY created_at ASC, id ASC`,
+      [thread.id]
+    )
+
+    return {
+      ...thread,
+      repliesList: rows.map<ForumReply>((reply) => ({
+        id: String(reply.id),
+        author: `玩家 ${reply.author_account_id}`,
+        content: reply.body,
+        createdAt: String(reply.created_at),
+      })),
+    }
+  } catch (error) {
+    if (!isDatabaseConfigurationError(error)) {
+      console.error("Failed to read CMS forum replies", error)
+    }
+
+    return { ...thread, repliesList: [] }
+  }
+}
+
 async function getLiveProfile(accountId: number): Promise<PlayerProfile | undefined> {
   try {
     const [accounts] = await authDb.execute<AccountRow[]>(
@@ -468,12 +621,18 @@ export const portalDataProvider = {
     return readContent("player_profile", () => mockPortalDataProvider.getPlayerProfile(accountId))
   },
   getForumCategories(): Promise<ForumCategory[]> {
-    return readContent("forum_categories", () => mockPortalDataProvider.getForumCategories())
+    return getLiveForumCategories().then((categories) => categories ?? readContent("forum_categories", () => mockPortalDataProvider.getForumCategories()))
   },
   getForumThreads(): Promise<ForumThread[]> {
-    return readContent("forum_threads", () => mockPortalDataProvider.getForumThreads())
+    return getLiveForumThreads().then((threads) => threads ?? readContent("forum_threads", () => mockPortalDataProvider.getForumThreads()))
   },
   async getForumThread(slug: string) {
+    const liveThread = await getLiveForumThread(slug)
+
+    if (liveThread) {
+      return liveThread
+    }
+
     const threads = await this.getForumThreads()
     return threads.find((thread) => thread.slug === slug)
   },

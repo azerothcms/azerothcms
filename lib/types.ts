@@ -103,6 +103,14 @@ export interface ForumThread {
   isHot?: boolean
   tags: string[]
   body: string[]
+  repliesList?: ForumReply[]
+}
+
+export interface ForumReply {
+  id: string
+  author: string
+  content: string
+  createdAt: string
 }
 
 export type ShopProductCategory = "账号服务" | "外观收藏" | "坐骑伙伴"

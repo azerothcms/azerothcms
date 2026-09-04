@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { GlassNotice } from "@/components/ui/glass-notice"
 import { copy } from "@/lib/i18n"
+import type { ForumReply } from "@/lib/types"
 import {
   getMockForumServerSnapshot,
   getMockRepliesSnapshot,
@@ -17,11 +18,14 @@ import {
 
 type ForumThreadActionsProps = {
   threadSlug: string
+  initialReplies?: ForumReply[]
 }
 
-export function ForumThreadActions({ threadSlug }: ForumThreadActionsProps) {
+export function ForumThreadActions({ threadSlug, initialReplies }: ForumThreadActionsProps) {
   const [reply, setReply] = useState("")
   const [status, setStatus] = useState("")
+  const [pending, setPending] = useState(false)
+  const [serverReplies, setServerReplies] = useState(initialReplies ?? [])
   const subscribeToReplies = useCallback(
     (listener: () => void) => subscribeMockReplies(threadSlug, listener),
     [threadSlug]
@@ -35,10 +39,22 @@ export function ForumThreadActions({ threadSlug }: ForumThreadActionsProps) {
     getRepliesSnapshot,
     getMockForumServerSnapshot
   )
-  const submittedReplies = repliesSnapshot ? readMockReplies(threadSlug) : []
+  const submittedReplies = initialReplies
+    ? serverReplies
+    : repliesSnapshot
+      ? readMockReplies(threadSlug)
+      : []
   const hasError = Boolean(status && status !== copy.forum.replySuccess)
+  const replyAuthor = (value: (typeof submittedReplies)[number]) =>
+    "author" in value && typeof value.author === "string"
+      ? value.author
+      : copy.forum.previewAuthor
+  const replyCreatedAt = (value: (typeof submittedReplies)[number]) =>
+    "createdAt" in value && typeof value.createdAt === "string"
+      ? value.createdAt
+      : "刚刚"
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const content = getEditorText(reply)
@@ -47,16 +63,43 @@ export function ForumThreadActions({ threadSlug }: ForumThreadActionsProps) {
       return
     }
 
-    const nextReplies = [
-      ...submittedReplies,
-      {
-        id: `${threadSlug}-${submittedReplies.length + 1}`,
-        content,
-      },
-    ]
-    writeMockReplies(threadSlug, nextReplies)
-    setStatus(copy.forum.replySuccess)
-    setReply("")
+    setPending(true)
+
+    try {
+      if (initialReplies) {
+        const response = await fetch("/api/forum/replies", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ threadSlug, content }),
+        })
+        const result = (await response.json()) as {
+          error?: string
+          reply?: ForumReply
+        }
+
+        if (!response.ok || !result.reply) {
+          setStatus(result.error ?? "发布回复失败，请稍后重试。")
+          return
+        }
+
+        setServerReplies((current) => [...current, result.reply as ForumReply])
+      } else {
+        writeMockReplies(threadSlug, [
+          ...submittedReplies,
+          {
+            id: `${threadSlug}-${submittedReplies.length + 1}`,
+            content,
+          },
+        ])
+      }
+
+      setStatus(copy.forum.replySuccess)
+      setReply("")
+    } catch {
+      setStatus("无法连接论坛服务，请稍后重试。")
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
@@ -77,9 +120,9 @@ export function ForumThreadActions({ threadSlug }: ForumThreadActionsProps) {
             >
               <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
                 <span className="font-medium text-foreground">
-                  {copy.forum.previewAuthor}
+                  {replyAuthor(submittedReply)}
                 </span>
-                <span>刚刚</span>
+                <span>{replyCreatedAt(submittedReply)}</span>
               </div>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
                 {submittedReply.content}
@@ -112,7 +155,9 @@ export function ForumThreadActions({ threadSlug }: ForumThreadActionsProps) {
           ) : (
             <span />
           )}
-          <Button type="submit">发布回复</Button>
+          <Button type="submit" disabled={pending}>
+            {pending ? "发布中……" : "发布回复"}
+          </Button>
         </div>
       </form>
     </section>

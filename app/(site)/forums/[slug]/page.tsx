@@ -70,11 +70,11 @@ export default async function ForumThreadPage({ params }: ForumThreadPageProps) 
           </div>
         </CardContent>
         <CardFooter className="border-t bg-muted/20 px-6 py-4 text-xs text-muted-foreground sm:px-8">
-          这是一个本地 Mock 主题，真实版本将由论坛 API 提供帖子、回复与审核状态。
+          {thread.repliesList ? "该主题与回复来自 CMS 论坛表。" : "这是一个本地 Mock 主题，真实版本将由论坛 API 提供帖子、回复与审核状态。"}
         </CardFooter>
       </Card>
 
-      <ForumThreadActions threadSlug={thread.slug} />
+      <ForumThreadActions threadSlug={thread.slug} initialReplies={thread.repliesList} />
     </div>
   )
 }

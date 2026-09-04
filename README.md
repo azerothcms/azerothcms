@@ -60,6 +60,7 @@ pnpm build
 - `app/api/auth`：注册、登录、退出和会话接口。
 - `app/api/cms/content`：管理员 CMS 内容读取与 JSON upsert 接口。
 - `app/api/admin/news`：管理员新闻草稿写入 `news_article` 表。
+- `app/api/forum`：登录用户发布论坛主题与回复，写入 `forum_thread`、`forum_reply` 表。
 - `app/api/setup`、`lib/setup.ts`：首次启动状态检查与首个管理员初始化接口。
 - `lib/session.ts`：客户端会话快照同步。
 - `lib/i18n.ts`：中文优先文案字典。
@@ -78,4 +79,4 @@ pnpm build
 
 ## 当前边界
 
-论坛、商城内容目前仍支持 Mock fallback；新闻已支持从 `news_article` 表读取已发布内容并保存管理员草稿。真实支付、邮件验证、文件上传、权限审计、装备/公会详情同步和 CMS 发布服务留待后续阶段。
+商城内容目前仍支持 Mock fallback；新闻和论坛已支持读取/写入 CMS 业务表。真实支付、邮件验证、文件上传、权限审计、装备/公会详情同步和 CMS 发布服务留待后续阶段。

@@ -22,6 +22,7 @@ export function ForumComposer() {
   const [title, setTitle] = useState("")
   const [message, setMessage] = useState("")
   const [status, setStatus] = useState("")
+  const [pending, setPending] = useState(false)
   const topicSnapshot = useSyncExternalStore(
     subscribeMockTopic,
     getMockTopicSnapshot,
@@ -30,7 +31,7 @@ export function ForumComposer() {
   const submittedTopic = topicSnapshot ? readMockTopic() : null
   const hasError = Boolean(status && status !== copy.forum.topicSuccess)
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const body = getEditorText(message)
@@ -39,11 +40,34 @@ export function ForumComposer() {
       return
     }
 
-    const topic = { title: title.trim(), body }
-    writeMockTopic(topic)
-    setStatus(copy.forum.topicSuccess)
-    setTitle("")
-    setMessage("")
+    setPending(true)
+
+    try {
+      const response = await fetch("/api/forum/threads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          content: body,
+          categorySlug: "general",
+        }),
+      })
+      const result = (await response.json()) as { error?: string }
+
+      if (!response.ok) {
+        setStatus(result.error ?? "发布主题失败，请稍后重试。")
+        return
+      }
+
+      writeMockTopic({ title: title.trim(), body })
+      setStatus(copy.forum.topicSuccess)
+      setTitle("")
+      setMessage("")
+    } catch {
+      setStatus("无法连接论坛服务，请稍后重试。")
+    } finally {
+      setPending(false)
+    }
   }
 
   if (!open) {
@@ -131,8 +155,8 @@ export function ForumComposer() {
           ) : (
             <span />
           )}
-          <Button type="submit">
-            {copy.forum.publishTopic}
+          <Button type="submit" disabled={pending}>
+            {pending ? "发布中……" : copy.forum.publishTopic}
             <ArrowRight data-icon="inline-end" aria-hidden="true" />
           </Button>
         </div>
