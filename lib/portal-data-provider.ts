@@ -34,6 +34,20 @@ interface RealmOverrideRow extends RowDataPacket {
   description: string | null
 }
 
+interface NewsRow extends RowDataPacket {
+  id: string
+  slug: string
+  title: string
+  category: NewsArticle["category"]
+  excerpt: string
+  content: unknown
+  published_at: Date | string
+  read_time: string
+  featured: number
+  accent: NewsArticle["accent"]
+  status: NewsArticle["status"]
+}
+
 interface CharacterRow extends RowDataPacket {
   guid: number | string
   account: number
@@ -78,6 +92,16 @@ function parsePayload<T>(payload: unknown): T | undefined {
   }
 
   return payload as T | undefined
+}
+
+function parseStringArray(value: unknown) {
+  const parsed = parsePayload<unknown>(value)
+
+  if (Array.isArray(parsed)) {
+    return parsed.filter((item): item is string => typeof item === "string")
+  }
+
+  return typeof parsed === "string" ? [parsed] : []
 }
 
 async function readContent<T>(key: ContentKey, fallback: () => Promise<T>): Promise<T> {
@@ -274,6 +298,42 @@ async function getLiveCharacters(accountId?: number): Promise<CharacterSummary[]
   }
 }
 
+async function getLiveNews(includeDrafts = false): Promise<NewsArticle[] | undefined> {
+  try {
+    const [rows] = await cmsDb.execute<NewsRow[]>(
+      `SELECT id, slug, title, category, excerpt, content, published_at,
+              read_time, featured, accent, status
+       FROM news_article
+       ${includeDrafts ? "" : "WHERE status = 'published'"}
+       ORDER BY published_at DESC, created_at DESC`
+    )
+
+    if (!rows.length) {
+      return undefined
+    }
+
+    return rows.map<NewsArticle>((article) => ({
+      id: article.id,
+      slug: article.slug,
+      title: article.title,
+      category: article.category,
+      excerpt: article.excerpt,
+      content: parseStringArray(article.content),
+      publishedAt: String(article.published_at).slice(0, 10),
+      readTime: article.read_time,
+      featured: Boolean(article.featured),
+      accent: article.accent,
+      status: article.status ?? "published",
+    }))
+  } catch (error) {
+    if (!isDatabaseConfigurationError(error)) {
+      console.error("Failed to read CMS news articles", error)
+    }
+
+    return undefined
+  }
+}
+
 async function getLiveProfile(accountId: number): Promise<PlayerProfile | undefined> {
   try {
     const [accounts] = await authDb.execute<AccountRow[]>(
@@ -378,7 +438,10 @@ export const portalDataProvider = {
     return getLiveRealms().then((realms) => realms ?? mockPortalDataProvider.getRealms())
   },
   getNews(): Promise<NewsArticle[]> {
-    return readContent("news", () => mockPortalDataProvider.getNews())
+    return getLiveNews().then((news) => news ?? readContent("news", () => mockPortalDataProvider.getNews()))
+  },
+  getAdminNews(): Promise<NewsArticle[]> {
+    return getLiveNews(true).then((news) => news ?? readContent("news", () => mockPortalDataProvider.getNews()))
   },
   async getNewsArticle(slug: string) {
     const articles = await this.getNews()

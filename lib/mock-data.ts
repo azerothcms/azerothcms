@@ -456,6 +456,9 @@ export const mockPortalDataProvider: PortalDataProvider = {
   async getNews() {
     return news
   },
+  async getAdminNews() {
+    return news
+  },
   async getNewsArticle(slug) {
     return news.find((article) => article.slug === slug)
   },

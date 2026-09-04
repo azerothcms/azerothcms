@@ -26,6 +26,7 @@ export interface NewsArticle {
   readTime: string
   featured: boolean
   accent: "gold" | "blue" | "purple"
+  status?: "draft" | "published"
 }
 
 export interface GearItem {
@@ -166,6 +167,7 @@ export interface SetupStatus {
 export interface PortalDataProvider {
   getRealms(): Promise<Realm[]>
   getNews(): Promise<NewsArticle[]>
+  getAdminNews(): Promise<NewsArticle[]>
   getNewsArticle(slug: string): Promise<NewsArticle | undefined>
   getCharacters(): Promise<CharacterSummary[]>
   getCharacter(id: string): Promise<CharacterSummary | undefined>

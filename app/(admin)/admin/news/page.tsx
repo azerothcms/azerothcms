@@ -10,7 +10,7 @@ import { portalDataProvider } from "@/lib/portal-data-provider"
 export const metadata = { title: "新闻管理" }
 
 export default async function AdminNewsPage() {
-  const articles = await portalDataProvider.getNews()
+  const articles = await portalDataProvider.getAdminNews()
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -43,14 +43,16 @@ export default async function AdminNewsPage() {
                     <CalendarDays className="size-3.5" aria-hidden="true" />
                     {article.publishedAt}
                   </span>
-                  <Badge variant="secondary">已发布</Badge>
+                  <Badge variant={article.status === "draft" ? "warning" : "secondary"}>
+                    {article.status === "draft" ? "草稿" : "已发布"}
+                  </Badge>
                 </div>
               </div>
             ))}
           </div>
         </CardContent>
       </Card>
-      <p className="mt-5 text-xs leading-5 text-muted-foreground">新闻草稿会写入 CMS 内容表；定时发布、权限审核与正式新闻发布流程仍需后续接入。</p>
+      <p className="mt-5 text-xs leading-5 text-muted-foreground">新闻草稿会写入 CMS 的 `news_article` 表；定时发布、权限审核与正式新闻发布流程仍需后续接入。</p>
     </div>
   )
 }

@@ -43,22 +43,19 @@ export function AdminNewsActions() {
     setPending(true)
 
     try {
-      const response = await fetch("/api/cms/content", {
-        method: "PUT",
+      const response = await fetch("/api/admin/news", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          key: "news_draft",
-          payload: {
-            title: title.trim(),
-            content: [body],
-            category: "社区",
-            excerpt: body.slice(0, 180),
-            publishedAt: new Date().toISOString().slice(0, 10),
-            readTime: "1 分钟",
-            featured: false,
-            accent: "blue",
-            status: "draft",
-          },
+          title: title.trim(),
+          content: body,
+          category: "社区",
+          excerpt: body.slice(0, 180),
+          publishedAt: new Date().toISOString().slice(0, 10),
+          readTime: "1 分钟",
+          featured: false,
+          accent: "blue",
+          status: "draft",
         }),
       })
       const result = (await response.json()) as { error?: string }

@@ -80,7 +80,7 @@ export default async function AdminUsersPage() {
 
       <div className="mt-5 flex items-start gap-3 rounded-2xl border border-primary/20 bg-primary/6 p-5 text-xs leading-5 text-muted-foreground">
         <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-        <p>账号列表已接入 TrinityCore；玩家封禁、邮件验证与权限变更仍需补充安全的管理接口。</p>
+        <p>账号列表和锁定操作已接入 TrinityCore；邮件验证与权限变更仍需补充安全的管理接口。</p>
       </div>
     </div>
   )
