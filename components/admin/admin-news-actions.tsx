@@ -1,7 +1,8 @@
 "use client"
 
 import { ArrowRight, FilePlus2, X } from "lucide-react"
-import { FormEvent, useState, useSyncExternalStore } from "react"
+import { FormEvent, useState } from "react"
+import { useRouter } from "next/navigation"
 
 import { ForumEditor, getEditorText } from "@/components/site/forum-editor"
 import { Button } from "@/components/ui/button"
@@ -9,26 +10,14 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { GlassNotice } from "@/components/ui/glass-notice"
 import { Input } from "@/components/ui/input"
 import { copy } from "@/lib/i18n"
-import {
-  getMockAdminServerSnapshot,
-  getMockNewsDraftSnapshot,
-  readMockNewsDraft,
-  subscribeMockNewsDraft,
-  writeMockNewsDraft,
-} from "@/lib/mock-admin-storage"
-
 export function AdminNewsActions() {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [status, setStatus] = useState("")
   const [pending, setPending] = useState(false)
-  const draftSnapshot = useSyncExternalStore(
-    subscribeMockNewsDraft,
-    getMockNewsDraftSnapshot,
-    getMockAdminServerSnapshot
-  )
-  const createdDraft = draftSnapshot ? readMockNewsDraft() : null
+  const [createdDraft, setCreatedDraft] = useState<{ title: string; content: string } | null>(null)
   const hasError = Boolean(status && status !== copy.admin.newsDraftSuccess)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -65,10 +54,11 @@ export function AdminNewsActions() {
         return
       }
 
-      writeMockNewsDraft({ title: title.trim(), content: body })
+      setCreatedDraft({ title: title.trim(), content: body })
       setStatus(copy.admin.newsDraftSuccess)
       setTitle("")
       setContent("")
+      router.refresh()
     } catch {
       setStatus("无法连接 CMS 服务，请稍后重试。")
     } finally {
