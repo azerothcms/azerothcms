@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, LogOut, Settings, Shield, Swords } from "lucide-react"
+import { LayoutDashboard, LogOut, Settings, Shield, ShoppingBag, Swords } from "lucide-react"
 import { useEffect, useSyncExternalStore, type ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -27,6 +27,7 @@ const accountLinks = [
   { href: "/account", label: copy.account.overview, icon: LayoutDashboard },
   { href: "/account/game-accounts", label: copy.account.gameAccounts, icon: Shield },
   { href: "/account/characters", label: copy.account.characters, icon: Swords },
+  { href: "/account/orders", label: "订单记录", icon: ShoppingBag },
   { href: "/account/settings", label: copy.account.settings, icon: Settings },
 ]
 

@@ -14,6 +14,7 @@ import type {
   PortalDataProvider,
   Realm,
   ShopProduct,
+  ShopOrderSummary,
 } from "@/lib/types"
 
 interface ContentRow extends RowDataPacket {
@@ -95,6 +96,15 @@ interface ShopProductRow extends RowDataPacket {
   currency: string
   accent: ShopProduct["accent"]
   featured: number
+}
+
+interface ShopOrderRow extends RowDataPacket {
+  id: number | string
+  status: ShopOrderSummary["status"]
+  total: number | string
+  currency: string
+  created_at: Date | string
+  items: string | null
 }
 
 interface CharacterRow extends RowDataPacket {
@@ -535,6 +545,41 @@ async function getLiveShopProducts(): Promise<ShopProduct[] | undefined> {
   }
 }
 
+async function getLiveShopOrders(accountId: number): Promise<ShopOrderSummary[] | undefined> {
+  try {
+    const [rows] = await cmsDb.execute<ShopOrderRow[]>(
+      `SELECT o.id, o.status, o.total, o.currency, o.created_at,
+              GROUP_CONCAT(
+                CONCAT(COALESCE(p.name, i.product_id), ' × ', i.quantity)
+                ORDER BY i.id SEPARATOR '、'
+              ) AS items
+       FROM shop_order o
+       INNER JOIN shop_order_item i ON i.order_id = o.id
+       LEFT JOIN shop_product p ON p.id = i.product_id
+       WHERE o.account_id = ?
+       GROUP BY o.id, o.status, o.total, o.currency, o.created_at
+       ORDER BY o.created_at DESC
+       LIMIT 50`,
+      [accountId]
+    )
+
+    return rows.map<ShopOrderSummary>((order) => ({
+      id: String(order.id),
+      status: order.status,
+      total: Number(order.total),
+      currency: order.currency,
+      createdAt: String(order.created_at),
+      items: order.items ?? "订单明细不可用",
+    }))
+  } catch (error) {
+    if (!isDatabaseConfigurationError(error)) {
+      console.error("Failed to read CMS shop orders", error)
+    }
+
+    return undefined
+  }
+}
+
 async function getLiveProfile(accountId: number): Promise<PlayerProfile | undefined> {
   try {
     const [accounts] = await authDb.execute<AccountRow[]>(
@@ -690,6 +735,9 @@ export const portalDataProvider = {
   async getShopProduct(slug: string) {
     const products = await this.getShopProducts()
     return products.find((product) => product.slug === slug)
+  },
+  getShopOrders(accountId: number): Promise<ShopOrderSummary[]> {
+    return getLiveShopOrders(accountId).then((orders) => orders ?? [])
   },
   async getAdminOverview(): Promise<AdminOverview> {
     const overview = await getLiveAdminOverview()

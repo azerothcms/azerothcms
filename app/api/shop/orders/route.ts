@@ -10,6 +10,15 @@ interface ProductRow extends RowDataPacket {
   currency: string
 }
 
+interface OrderRow extends RowDataPacket {
+  id: number | string
+  status: "pending" | "paid" | "cancelled" | "fulfilled"
+  total: number | string
+  currency: string
+  created_at: Date | string
+  items: string | null
+}
+
 function errorResponse(message: string, status: number) {
   return NextResponse.json({ error: message }, { status })
 }
@@ -25,6 +34,50 @@ function isCmsConfigurationError(error: unknown) {
 }
 
 export const dynamic = "force-dynamic"
+
+export async function GET() {
+  const session = await getServerSession()
+
+  if (!session.authenticated || !session.accountId) {
+    return errorResponse("请先登录后查看订单。", 401)
+  }
+
+  try {
+    const [orders] = await cmsDb.execute<OrderRow[]>(
+      `SELECT o.id, o.status, o.total, o.currency, o.created_at,
+              GROUP_CONCAT(
+                CONCAT(COALESCE(p.name, i.product_id), ' × ', i.quantity)
+                ORDER BY i.id SEPARATOR '、'
+              ) AS items
+       FROM shop_order o
+       INNER JOIN shop_order_item i ON i.order_id = o.id
+       LEFT JOIN shop_product p ON p.id = i.product_id
+       WHERE o.account_id = ?
+       GROUP BY o.id, o.status, o.total, o.currency, o.created_at
+       ORDER BY o.created_at DESC
+       LIMIT 50`,
+      [session.accountId]
+    )
+
+    return NextResponse.json({
+      orders: orders.map((order) => ({
+        id: String(order.id),
+        status: order.status,
+        total: Number(order.total),
+        currency: order.currency,
+        createdAt: String(order.created_at),
+        items: order.items ?? "订单明细不可用",
+      })),
+    })
+  } catch (error) {
+    if (isCmsConfigurationError(error)) {
+      return errorResponse("CMS 数据库尚未初始化或当前账号没有访问权限。", 503)
+    }
+
+    console.error("Failed to read CMS shop orders", error)
+    return errorResponse("读取订单失败。", 500)
+  }
+}
 
 export async function POST(request: Request) {
   const session = await getServerSession()

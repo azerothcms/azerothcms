@@ -128,6 +128,15 @@ export interface ShopProduct {
   featured?: boolean
 }
 
+export interface ShopOrderSummary {
+  id: string
+  status: "pending" | "paid" | "cancelled" | "fulfilled"
+  total: number
+  currency: string
+  createdAt: string
+  items: string
+}
+
 export interface AdminOverview {
   totalPlayers: number
   onlinePlayers: number
@@ -185,6 +194,7 @@ export interface PortalDataProvider {
   getForumThread(slug: string): Promise<ForumThread | undefined>
   getShopProducts(): Promise<ShopProduct[]>
   getShopProduct(slug: string): Promise<ShopProduct | undefined>
+  getShopOrders(accountId: number): Promise<ShopOrderSummary[]>
   getAdminOverview(): Promise<AdminOverview>
   getAdminUsers(): Promise<AdminUserSummary[]>
 }
