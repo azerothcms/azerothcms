@@ -489,6 +489,9 @@ export const mockPortalDataProvider: PortalDataProvider = {
   async getShopOrders() {
     return []
   },
+  async getAdminShopOrders() {
+    return []
+  },
   async getAdminOverview() {
     return adminOverview
   },

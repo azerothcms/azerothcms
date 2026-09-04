@@ -62,6 +62,7 @@ pnpm build
 - `app/api/admin/news`：管理员新闻草稿写入 `news_article` 表。
 - `app/api/forum`：登录用户发布论坛主题与回复，写入 `forum_thread`、`forum_reply` 表。
 - `app/api/shop`：登录用户提交商城订单并查询个人订单，写入/读取 `shop_order`、`shop_order_item` 表。
+- `app/api/admin/orders`：管理员查询订单并更新支付/发放状态。
 - `app/api/setup`、`lib/setup.ts`：首次启动状态检查与首个管理员初始化接口。
 - `lib/session.ts`：客户端会话快照同步。
 - `lib/i18n.ts`：中文优先文案字典。

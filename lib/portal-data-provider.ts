@@ -15,6 +15,7 @@ import type {
   Realm,
   ShopProduct,
   ShopOrderSummary,
+  AdminShopOrderSummary,
 } from "@/lib/types"
 
 interface ContentRow extends RowDataPacket {
@@ -105,6 +106,16 @@ interface ShopOrderRow extends RowDataPacket {
   currency: string
   created_at: Date | string
   items: string | null
+}
+
+interface AdminShopOrderRow extends ShopOrderRow {
+  account_id: number
+}
+
+interface AccountLookupRow extends RowDataPacket {
+  id: number
+  username: string
+  email: string
 }
 
 interface CharacterRow extends RowDataPacket {
@@ -580,6 +591,58 @@ async function getLiveShopOrders(accountId: number): Promise<ShopOrderSummary[] 
   }
 }
 
+async function getLiveAdminShopOrders(): Promise<AdminShopOrderSummary[] | undefined> {
+  try {
+    const [rows] = await cmsDb.execute<AdminShopOrderRow[]>(
+      `SELECT o.id, o.account_id, o.status, o.total, o.currency, o.created_at,
+              GROUP_CONCAT(
+                CONCAT(COALESCE(p.name, i.product_id), ' × ', i.quantity)
+                ORDER BY i.id SEPARATOR '、'
+              ) AS items
+       FROM shop_order o
+       INNER JOIN shop_order_item i ON i.order_id = o.id
+       LEFT JOIN shop_product p ON p.id = i.product_id
+       GROUP BY o.id, o.account_id, o.status, o.total, o.currency, o.created_at
+       ORDER BY o.created_at DESC
+       LIMIT 100`
+    )
+
+    if (!rows.length) {
+      return []
+    }
+
+    const accountIds = [...new Set(rows.map((order) => order.account_id))]
+    const placeholders = accountIds.map(() => "?").join(",")
+    const [accounts] = await authDb.execute<AccountLookupRow[]>(
+      `SELECT id, username, email FROM account WHERE id IN (${placeholders})`,
+      accountIds
+    )
+    const accountMap = new Map(accounts.map((account) => [account.id, account]))
+
+    return rows.map<AdminShopOrderSummary>((order) => {
+      const account = accountMap.get(order.account_id)
+
+      return {
+        id: String(order.id),
+        accountId: order.account_id,
+        username: account?.username ?? `账号 ${order.account_id}`,
+        email: account?.email ?? "",
+        status: order.status,
+        total: Number(order.total),
+        currency: order.currency,
+        createdAt: String(order.created_at),
+        items: order.items ?? "订单明细不可用",
+      }
+    })
+  } catch (error) {
+    if (!isDatabaseConfigurationError(error)) {
+      console.error("Failed to read CMS admin shop orders", error)
+    }
+
+    return undefined
+  }
+}
+
 async function getLiveProfile(accountId: number): Promise<PlayerProfile | undefined> {
   try {
     const [accounts] = await authDb.execute<AccountRow[]>(
@@ -738,6 +801,9 @@ export const portalDataProvider = {
   },
   getShopOrders(accountId: number): Promise<ShopOrderSummary[]> {
     return getLiveShopOrders(accountId).then((orders) => orders ?? [])
+  },
+  getAdminShopOrders(): Promise<AdminShopOrderSummary[]> {
+    return getLiveAdminShopOrders().then((orders) => orders ?? [])
   },
   async getAdminOverview(): Promise<AdminOverview> {
     const overview = await getLiveAdminOverview()

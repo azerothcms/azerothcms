@@ -137,6 +137,12 @@ export interface ShopOrderSummary {
   items: string
 }
 
+export interface AdminShopOrderSummary extends ShopOrderSummary {
+  accountId: number
+  username: string
+  email: string
+}
+
 export interface AdminOverview {
   totalPlayers: number
   onlinePlayers: number
@@ -195,6 +201,7 @@ export interface PortalDataProvider {
   getShopProducts(): Promise<ShopProduct[]>
   getShopProduct(slug: string): Promise<ShopProduct | undefined>
   getShopOrders(accountId: number): Promise<ShopOrderSummary[]>
+  getAdminShopOrders(): Promise<AdminShopOrderSummary[]>
   getAdminOverview(): Promise<AdminOverview>
   getAdminUsers(): Promise<AdminUserSummary[]>
 }

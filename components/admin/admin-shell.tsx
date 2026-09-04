@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { LayoutDashboard, LogOut, Newspaper, Server, Users } from "lucide-react"
+import { LayoutDashboard, LogOut, Newspaper, Server, ShoppingBag, Users } from "lucide-react"
 import { useEffect, useSyncExternalStore, type ReactNode } from "react"
 import { usePathname, useRouter } from "next/navigation"
 
@@ -27,6 +27,7 @@ const adminLinks = [
   { href: "/admin", label: copy.admin.overview, icon: LayoutDashboard },
   { href: "/admin/news", label: copy.admin.news, icon: Newspaper },
   { href: "/admin/realms", label: copy.admin.realms, icon: Server },
+  { href: "/admin/orders", label: "订单管理", icon: ShoppingBag },
   { href: "/admin/users", label: copy.admin.users, icon: Users },
 ]
 
