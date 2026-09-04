@@ -22,6 +22,7 @@ export function AdminNewsActions() {
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [status, setStatus] = useState("")
+  const [pending, setPending] = useState(false)
   const draftSnapshot = useSyncExternalStore(
     subscribeMockNewsDraft,
     getMockNewsDraftSnapshot,
@@ -30,7 +31,7 @@ export function AdminNewsActions() {
   const createdDraft = draftSnapshot ? readMockNewsDraft() : null
   const hasError = Boolean(status && status !== copy.admin.newsDraftSuccess)
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const body = getEditorText(content)
@@ -39,10 +40,43 @@ export function AdminNewsActions() {
       return
     }
 
-    writeMockNewsDraft({ title: title.trim(), content: body })
-    setStatus(copy.admin.newsDraftSuccess)
-    setTitle("")
-    setContent("")
+    setPending(true)
+
+    try {
+      const response = await fetch("/api/cms/content", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: "news_draft",
+          payload: {
+            title: title.trim(),
+            content: [body],
+            category: "社区",
+            excerpt: body.slice(0, 180),
+            publishedAt: new Date().toISOString().slice(0, 10),
+            readTime: "1 分钟",
+            featured: false,
+            accent: "blue",
+            status: "draft",
+          },
+        }),
+      })
+      const result = (await response.json()) as { error?: string }
+
+      if (!response.ok) {
+        setStatus(result.error ?? "保存 CMS 草稿失败。")
+        return
+      }
+
+      writeMockNewsDraft({ title: title.trim(), content: body })
+      setStatus(copy.admin.newsDraftSuccess)
+      setTitle("")
+      setContent("")
+    } catch {
+      setStatus("无法连接 CMS 服务，请稍后重试。")
+    } finally {
+      setPending(false)
+    }
   }
 
   if (!open) {
@@ -137,7 +171,7 @@ export function AdminNewsActions() {
             >
               取消
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={pending}>
               创建草稿
               <ArrowRight data-icon="inline-end" aria-hidden="true" />
             </Button>
