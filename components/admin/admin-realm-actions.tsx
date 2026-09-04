@@ -1,29 +1,16 @@
 "use client"
 
 import { PauseCircle, PlayCircle } from "lucide-react"
-import { useState, useSyncExternalStore } from "react"
+import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/site/status-badge"
 import { statusLabel } from "@/lib/i18n"
-import {
-  getMockAdminServerSnapshot,
-  getMockRealmStatusesSnapshot,
-  readMockRealmStatuses,
-  subscribeMockRealmStatuses,
-  writeMockRealmStatus,
-} from "@/lib/mock-admin-storage"
 import type { Realm, RealmStatus } from "@/lib/types"
+import { cn } from "@/lib/utils"
 
 export function AdminRealmActions({ realm }: { realm: Realm }) {
-  const realmStatusesSnapshot = useSyncExternalStore(
-    subscribeMockRealmStatuses,
-    getMockRealmStatusesSnapshot,
-    getMockAdminServerSnapshot
-  )
-  const status: RealmStatus = realmStatusesSnapshot
-    ? (readMockRealmStatuses()[realm.id] ?? realm.status)
-    : realm.status
+  const [status, setStatus] = useState<RealmStatus>(realm.status)
   const nextStatus = status === "online" ? "maintenance" : "online"
   const [pending, setPending] = useState(false)
   const [error, setError] = useState("")
@@ -46,7 +33,7 @@ export function AdminRealmActions({ realm }: { realm: Realm }) {
         return
       }
 
-      writeMockRealmStatus(realm.id, nextStatus)
+      setStatus(nextStatus)
     } catch {
       setError("无法连接管理服务，请稍后重试。")
     } finally {
@@ -59,13 +46,14 @@ export function AdminRealmActions({ realm }: { realm: Realm }) {
       <div className="flex items-center gap-2">
         <StatusBadge status={status} />
         <span
-          className={`text-xs ${
+          className={cn(
+            "text-xs",
             status === "online"
               ? "text-emerald-300"
               : status === "offline"
                 ? "text-muted-foreground"
                 : "text-amber-300"
-          }`}
+          )}
         >
           当前状态：{statusLabel[status]}
         </span>

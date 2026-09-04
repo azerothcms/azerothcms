@@ -1,17 +1,10 @@
 "use client"
 
 import { Ban, CheckCircle2 } from "lucide-react"
-import { useState, useSyncExternalStore } from "react"
+import { useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  getMockAdminServerSnapshot,
-  getMockUserStatusesSnapshot,
-  readMockUserStatuses,
-  subscribeMockUserStatuses,
-  writeMockUserStatus,
-} from "@/lib/mock-admin-storage"
 import type { AdminUserSummary } from "@/lib/types"
 
 const statusVariants = {
@@ -20,26 +13,19 @@ const statusVariants = {
   已暂停: "destructive",
 } as const
 
-function useMockUserStatus(user: AdminUserSummary) {
-  const userStatusesSnapshot = useSyncExternalStore(
-    subscribeMockUserStatuses,
-    getMockUserStatusesSnapshot,
-    getMockAdminServerSnapshot
-  )
-
-  return userStatusesSnapshot
-    ? (readMockUserStatuses()[user.id] ?? user.status)
-    : user.status
-}
-
-export function AdminUserStatus({ user }: { user: AdminUserSummary }) {
-  const status = useMockUserStatus(user)
-
+export function AdminUserStatus({ status }: { status: AdminUserSummary["status"] }) {
   return <Badge variant={statusVariants[status]}>{status}</Badge>
 }
 
-export function AdminUserActions({ user }: { user: AdminUserSummary }) {
-  const status = useMockUserStatus(user)
+export function AdminUserActions({
+  user,
+  status,
+  onStatusChange,
+}: {
+  user: AdminUserSummary
+  status: AdminUserSummary["status"]
+  onStatusChange: (status: AdminUserSummary["status"]) => void
+}) {
   const suspended = status === "已暂停"
   const [pending, setPending] = useState(false)
   const [error, setError] = useState("")
@@ -61,7 +47,7 @@ export function AdminUserActions({ user }: { user: AdminUserSummary }) {
         return
       }
 
-      writeMockUserStatus(user.id, suspended ? "正常" : "已暂停")
+      onStatusChange(suspended ? "正常" : "已暂停")
     } catch {
       setError("无法连接管理服务，请稍后重试。")
     } finally {
