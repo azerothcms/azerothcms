@@ -64,6 +64,7 @@ pnpm build
 - `app/api/shop`：登录用户提交商城订单并查询个人订单，写入/读取 `shop_order`、`shop_order_item` 表。
 - `app/api/admin/orders`：管理员查询订单并更新支付/发放状态。
 - `app/api/account/profile`：登录用户更新 TrinityCore 账号邮箱。
+- `app/api/account/password`：登录用户验证当前密码后更新 TrinityCore SRP6 凭据。
 - `app/api/setup`、`lib/setup.ts`：首次启动状态检查与首个管理员初始化接口。
 - `lib/session.ts`：客户端会话快照同步。
 - `lib/i18n.ts`：中文优先文案字典。
@@ -82,4 +83,4 @@ pnpm build
 
 ## 当前边界
 
-商城商品、订单、新闻和论坛已支持读取/写入 CMS 业务表，账号邮箱已支持写入 TrinityCore。CMS 未初始化时商城目录仍支持 Mock fallback；真实支付、库存发放、邮件验证、文件上传、权限审计和装备/公会详情同步留待后续阶段。
+商城商品、订单、新闻和论坛已支持读取/写入 CMS 业务表，账号邮箱与密码已支持写入 TrinityCore。CMS 未初始化时商城目录仍支持 Mock fallback；真实支付、库存发放、邮件验证、文件上传、权限审计和装备/公会详情同步留待后续阶段。

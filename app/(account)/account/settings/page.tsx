@@ -2,6 +2,7 @@ import Link from "next/link"
 import { ArrowLeft, Settings2 } from "lucide-react"
 
 import { ProfileSettingsForm } from "@/components/account/profile-settings-form"
+import { PasswordSettingsForm } from "@/components/account/password-settings-form"
 import { portalDataProvider } from "@/lib/portal-data-provider"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { requireSession } from "@/lib/auth"
@@ -28,10 +29,19 @@ export default async function AccountSettingsPage() {
       <Card className="glass-surface mt-8">
         <CardHeader>
           <CardTitle>个人资料</CardTitle>
-          <CardDescription>更新玩家中心展示的用户名与邮箱地址。</CardDescription>
+          <CardDescription>更新玩家中心展示的邮箱地址。</CardDescription>
         </CardHeader>
         <CardContent>
           <ProfileSettingsForm profile={profile} />
+        </CardContent>
+      </Card>
+      <Card className="glass-surface mt-6">
+        <CardHeader>
+          <CardTitle>登录密码</CardTitle>
+          <CardDescription>修改用于登录 TrinityCore 的账号密码。</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PasswordSettingsForm />
         </CardContent>
       </Card>
     </div>
