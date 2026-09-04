@@ -1,7 +1,6 @@
 "use client"
 
 import { CheckCircle2, Gamepad2 } from "lucide-react"
-import { useSyncExternalStore } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import {
@@ -12,48 +11,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  getMockAccountServerSnapshot,
-  getMockGameAccountsSnapshot,
-  readMockGameAccounts,
-  subscribeMockGameAccounts,
-} from "@/lib/mock-account-storage"
 import type { GameAccount } from "@/lib/types"
 
-function useMockGameAccounts(initialAccounts: GameAccount[]) {
-  const accountsSnapshot = useSyncExternalStore(
-    subscribeMockGameAccounts,
-    getMockGameAccountsSnapshot,
-    getMockAccountServerSnapshot
-  )
-
-  return accountsSnapshot
-    ? [...initialAccounts, ...readMockGameAccounts()]
-    : initialAccounts
-}
-
 export function GameAccountCount({ initialCount }: { initialCount: number }) {
-  const accountsSnapshot = useSyncExternalStore(
-    subscribeMockGameAccounts,
-    getMockGameAccountsSnapshot,
-    getMockAccountServerSnapshot
-  )
-  const extraAccounts = accountsSnapshot ? readMockGameAccounts() : []
-
   return (
     <p className="truncate font-mono text-2xl font-semibold text-foreground">
-      {initialCount + extraAccounts.length}
+      {initialCount}
     </p>
   )
 }
 
 export function GameAccountList({
-  initialAccounts,
+  accounts,
 }: {
-  initialAccounts: GameAccount[]
+  accounts: GameAccount[]
 }) {
-  const accounts = useMockGameAccounts(initialAccounts)
-
   return (
     <div className="mt-8 flex flex-col gap-4">
       {accounts.map((account) => (

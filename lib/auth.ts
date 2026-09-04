@@ -192,6 +192,22 @@ export async function registerTrinityAccount(input: {
   return createTrinityAccount(input, "player")
 }
 
+export async function createTrinityGameAccount(input: {
+  ownerAccountId: number
+  username: string
+  password: string
+}): Promise<AuthenticatedAccount> {
+  return createTrinityAccount(
+    {
+      username: input.username,
+      email: "",
+      password: input.password,
+    },
+    "player",
+    input.ownerAccountId
+  )
+}
+
 export async function registerTrinityAdminAccount(input: {
   username: string
   email: string
@@ -206,7 +222,8 @@ async function createTrinityAccount(
     email: string
     password: string
   },
-  role: "admin" | "player"
+  role: "admin" | "player",
+  ownerAccountId?: number
 ): Promise<AuthenticatedAccount> {
   const username = normalizeTrinityCredential(input.username.trim())
   const email = normalizeTrinityCredential(input.email.trim())
@@ -227,9 +244,13 @@ async function createTrinityAccount(
       }
     }
 
+    const duplicateQuery = email
+      ? "SELECT id FROM account WHERE username = ? OR email = ? LIMIT 1"
+      : "SELECT id FROM account WHERE username = ? LIMIT 1"
+    const duplicateParams = email ? [username, email] : [username]
     const [existing] = await connection.execute<RowDataPacket[]>(
-      "SELECT id FROM account WHERE username = ? OR email = ? LIMIT 1",
-      [username, email]
+      duplicateQuery,
+      duplicateParams
     )
 
     if (existing.length) {
@@ -251,6 +272,16 @@ async function createTrinityAccount(
        SELECT id, ?, 0 FROM realmlist`,
       [result.insertId]
     )
+
+    if (ownerAccountId) {
+      const cmsDatabase = `\`${(process.env.CMS_DATABASE ?? "cms").replace(/`/g, "``")}\``
+      await connection.execute(
+        `INSERT INTO ${cmsDatabase}.game_account_link
+          (owner_account_id, game_account_id)
+         VALUES (?, ?)`,
+        [ownerAccountId, result.insertId]
+      )
+    }
 
     if (role === "admin") {
       await connection.execute(

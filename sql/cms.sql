@@ -28,6 +28,15 @@ CREATE TABLE IF NOT EXISTS `user_profile` (
   PRIMARY KEY (`account_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `game_account_link` (
+  `owner_account_id` INT UNSIGNED NOT NULL,
+  `game_account_id` INT UNSIGNED NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`owner_account_id`, `game_account_id`),
+  UNIQUE KEY `uk_game_account_link_game` (`game_account_id`),
+  KEY `idx_game_account_link_owner` (`owner_account_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `news_article` (
   `id` VARCHAR(64) NOT NULL,
   `slug` VARCHAR(160) NOT NULL,

@@ -118,6 +118,10 @@ interface AccountLookupRow extends RowDataPacket {
   email: string
 }
 
+interface GameAccountLinkRow extends RowDataPacket {
+  game_account_id: number
+}
+
 interface CharacterRow extends RowDataPacket {
   guid: number | string
   account: number
@@ -324,14 +328,22 @@ async function getRealmOverrides(realmIds: number[]) {
   return overrides
 }
 
-async function getLiveCharacters(accountId?: number): Promise<CharacterSummary[] | undefined> {
+async function getLiveCharacters(accountId?: number | number[]): Promise<CharacterSummary[] | undefined> {
   try {
+    const accountIds = Array.isArray(accountId)
+      ? accountId
+      : accountId
+        ? [accountId]
+        : []
+    const accountFilter = accountIds.length
+      ? `WHERE account IN (${accountIds.map(() => "?").join(",")})`
+      : ""
     const [rows] = await charactersDb.execute<CharacterRow[]>(
       `SELECT guid, account, name, race, class, level, online, health, power1, totaltime
        FROM characters
-       ${accountId ? "WHERE account = ?" : ""}
+       ${accountFilter}
        ORDER BY level DESC, name`,
-      accountId ? [accountId] : []
+      accountIds
     )
     const realms = await getLiveRealms()
     const realm = realms?.[0]
@@ -342,6 +354,7 @@ async function getLiveCharacters(accountId?: number): Promise<CharacterSummary[]
 
       return {
         id: String(character.guid),
+        accountId: character.account,
         name: character.name ?? `角色 ${character.guid}`,
         realmId: realm?.id ?? "realm-unknown",
         realmName: realm?.name ?? "TrinityCore",
@@ -660,7 +673,39 @@ async function getLiveProfile(accountId: number): Promise<PlayerProfile | undefi
       return undefined
     }
 
-    const characters = (await getLiveCharacters(accountId)) ?? []
+    let gameAccounts = [account]
+
+    try {
+      const [links] = await cmsDb.execute<GameAccountLinkRow[]>(
+        `SELECT game_account_id
+         FROM game_account_link
+         WHERE owner_account_id = ?
+         ORDER BY created_at ASC`,
+        [accountId]
+      )
+      const accountIds = [
+        account.id,
+        ...links.map((link) => link.game_account_id).filter((id) => id !== account.id),
+      ]
+      const placeholders = accountIds.map(() => "?").join(",")
+      const [linkedAccounts] = await authDb.execute<AccountRow[]>(
+        `SELECT a.id, a.username, a.email, a.joindate, a.locked, a.last_login,
+                COALESCE(MAX(aa.SecurityLevel), 0) AS securityLevel
+         FROM account a
+         LEFT JOIN account_access aa ON aa.AccountID = a.id
+         WHERE a.id IN (${placeholders})
+         GROUP BY a.id, a.username, a.email, a.joindate, a.locked, a.last_login
+         ORDER BY a.id = ? DESC, a.id`,
+        [...accountIds, account.id]
+      )
+      gameAccounts = linkedAccounts.length ? linkedAccounts : [account]
+    } catch (error) {
+      if (!isDatabaseConfigurationError(error)) {
+        console.error("Failed to read linked TrinityCore game accounts", error)
+      }
+    }
+
+    const characters = (await getLiveCharacters(gameAccounts.map((gameAccount) => gameAccount.id))) ?? []
     const memberSince = String(account.joindate).slice(0, 10)
 
     return {
@@ -668,16 +713,14 @@ async function getLiveProfile(accountId: number): Promise<PlayerProfile | undefi
       email: account.email,
       faction: characters[0]?.faction ?? "Alliance",
       memberSince,
-      gameAccounts: [
-        {
-          id: `account-${account.id}`,
-          username: account.username.toLowerCase(),
-          expansion: process.env.TRINITY_EXPANSION ?? "TrinityCore",
-          status: account.locked ? "locked" : "active",
-          characterCount: characters.length,
-          lastLogin: account.last_login ? String(account.last_login) : "尚未登录",
-        },
-      ],
+      gameAccounts: gameAccounts.map((gameAccount) => ({
+        id: `account-${gameAccount.id}`,
+        username: gameAccount.username,
+        expansion: process.env.TRINITY_EXPANSION ?? "TrinityCore",
+        status: gameAccount.locked ? "locked" : "active",
+        characterCount: characters.filter((character) => character.accountId === gameAccount.id).length,
+        lastLogin: gameAccount.last_login ? String(gameAccount.last_login) : "尚未登录",
+      })),
       characters,
     }
   } catch (error) {

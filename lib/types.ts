@@ -38,6 +38,7 @@ export interface GearItem {
 
 export interface CharacterSummary {
   id: string
+  accountId?: number
   name: string
   realmId: string
   realmName: string

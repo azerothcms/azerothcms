@@ -1,9 +1,8 @@
 import Link from "next/link"
 import { ArrowLeft, LockKeyhole } from "lucide-react"
 
-import { GameAccountActions } from "@/components/account/game-account-actions"
+import { GameAccountPanel } from "@/components/account/game-account-panel"
 import { portalDataProvider } from "@/lib/portal-data-provider"
-import { GameAccountList } from "@/components/account/game-account-list"
 import { Card, CardContent } from "@/components/ui/card"
 import { requireSession } from "@/lib/auth"
 
@@ -35,15 +34,14 @@ export default async function GameAccountsPage() {
             管理你用于登录服务器的游戏账号。
           </p>
         </div>
-        <GameAccountActions initialAccounts={profile.gameAccounts} />
       </div>
 
-      <GameAccountList initialAccounts={profile.gameAccounts} />
+      <GameAccountPanel initialAccounts={profile.gameAccounts} />
 
       <Card size="sm" className="glass-surface mt-8">
         <CardContent className="flex items-start gap-3 text-sm leading-6 text-muted-foreground">
           <LockKeyhole className="mt-1 size-4 shrink-0 text-primary" aria-hidden="true" />
-          <p>账号状态与角色数量来自 TrinityCore auth 和 characters 数据库；新增游戏账号功能需后续接入核心服务。</p>
+          <p>账号状态与角色数量来自 TrinityCore auth 和 characters 数据库；新账号需要 CMS 初始化后才能建立归属关系。</p>
         </CardContent>
       </Card>
     </div>
