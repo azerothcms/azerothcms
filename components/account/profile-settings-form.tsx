@@ -1,58 +1,64 @@
 "use client"
 
-import { FormEvent, useState, useSyncExternalStore } from "react"
+import { FormEvent, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { GlassNotice } from "@/components/ui/glass-notice"
 import { Input } from "@/components/ui/input"
-import {
-  getMockAccountServerSnapshot,
-  getMockProfileSnapshot,
-  readMockProfile,
-  subscribeMockProfile,
-  writeMockProfile,
-} from "@/lib/mock-account-storage"
+import { setClientSession } from "@/lib/session"
 import type { PlayerProfile } from "@/lib/types"
 
 export function ProfileSettingsForm({ profile }: { profile: PlayerProfile }) {
-  const [saved, setSaved] = useState(false)
-  const profileSnapshot = useSyncExternalStore(
-    subscribeMockProfile,
-    getMockProfileSnapshot,
-    getMockAccountServerSnapshot
-  )
-  const storedProfile = profileSnapshot ? readMockProfile() : null
-  const effectiveProfile = storedProfile
-    ? { ...profile, ...storedProfile }
-    : profile
-
-  return (
-    <ProfileSettingsFields
-      key={profileSnapshot || "server-profile"}
-      profile={effectiveProfile}
-      saved={saved}
-      onSavedChange={setSaved}
-    />
-  )
+  return <ProfileSettingsFields profile={profile} />
 }
 
-function ProfileSettingsFields({
-  profile,
-  saved,
-  onSavedChange,
-}: {
+function ProfileSettingsFields({ profile }: {
   profile: PlayerProfile
-  saved: boolean
-  onSavedChange: (saved: boolean) => void
 }) {
-  const [username, setUsername] = useState(profile.username)
+  const username = profile.username
   const [email, setEmail] = useState(profile.email)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState("")
+  const [pending, setPending] = useState(false)
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    writeMockProfile({ username: username.trim(), email: email.trim() })
-    onSavedChange(true)
+    const normalizedEmail = email.trim().toLowerCase()
+    setSaved(false)
+    setError("")
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setError("请输入有效的邮箱地址。")
+      return
+    }
+
+    setPending(true)
+
+    try {
+      const response = await fetch("/api/account/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail }),
+      })
+      const result = (await response.json()) as {
+        error?: string
+        session?: Parameters<typeof setClientSession>[0]
+      }
+
+      if (!response.ok || !result.session) {
+        setError(result.error ?? "更新账号资料失败。")
+        return
+      }
+
+      setClientSession(result.session)
+      setEmail(normalizedEmail)
+      setSaved(true)
+    } catch {
+      setError("无法连接账号服务，请稍后重试。")
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
@@ -64,11 +70,15 @@ function ProfileSettingsFields({
             id="profile-username"
             className="field-input"
             value={username}
-            onChange={(event) => {
-              setUsername(event.target.value)
-              onSavedChange(false)
-            }}
+            readOnly
+            aria-describedby="profile-username-description"
           />
+          <p
+            id="profile-username-description"
+            className="text-xs text-muted-foreground"
+          >
+            TrinityCore 用户名用于 SRP6 登录，不能直接修改。
+          </p>
         </Field>
         <Field>
           <FieldLabel htmlFor="profile-email">邮箱地址</FieldLabel>
@@ -79,17 +89,21 @@ function ProfileSettingsFields({
             value={email}
             onChange={(event) => {
               setEmail(event.target.value)
-              onSavedChange(false)
+              setSaved(false)
+              setError("")
             }}
+            aria-invalid={Boolean(error) || undefined}
           />
         </Field>
       </FieldGroup>
       <div className="rounded-xl border border-border/70 bg-muted/40 p-4 text-sm leading-6 text-muted-foreground">
-        这是 UI 原型，保存操作会写入当前浏览器的 Mock
-        资料，不会修改真实服务器账号。
+        邮箱会写入 TrinityCore 的 <code>auth.account.email</code>；邮箱验证流程尚未接入。
       </div>
       <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit">保存设置</Button>
+        <Button type="submit" disabled={pending}>
+          {pending ? "保存中……" : "保存设置"}
+        </Button>
+        {error ? <GlassNotice tone="error">{error}</GlassNotice> : null}
         {saved ? <GlassNotice tone="success">设置已保存</GlassNotice> : null}
       </div>
     </form>
