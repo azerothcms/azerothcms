@@ -55,6 +55,7 @@ pnpm build
 - `lib/db.ts`：MySQL 连接池。
 - `lib/auth.ts`、`lib/trinity-srp6.ts`：服务端会话、TrinityCore 账号注册与认证。
 - `app/api/auth`：注册、登录、退出和会话接口。
+- `app/api/cms/content`：管理员 CMS 内容读取与 JSON upsert 接口。
 - `lib/session.ts`：客户端会话快照同步。
 - `lib/i18n.ts`：中文优先文案字典。
 - `app/globals.css`：SwiftUI/macOS 视觉令牌、Liquid Glass 材料和响应式基础样式。
