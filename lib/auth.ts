@@ -189,12 +189,43 @@ export async function registerTrinityAccount(input: {
   email: string
   password: string
 }): Promise<AuthenticatedAccount> {
+  return createTrinityAccount(input, "player")
+}
+
+export async function registerTrinityAdminAccount(input: {
+  username: string
+  email: string
+  password: string
+}): Promise<AuthenticatedAccount> {
+  return createTrinityAccount(input, "admin")
+}
+
+async function createTrinityAccount(
+  input: {
+    username: string
+    email: string
+    password: string
+  },
+  role: "admin" | "player"
+): Promise<AuthenticatedAccount> {
   const username = normalizeTrinityCredential(input.username.trim())
   const email = normalizeTrinityCredential(input.email.trim())
   const connection = await authDb.getConnection()
 
   try {
     await connection.beginTransaction()
+
+    if (role === "admin") {
+      const [admins] = await connection.execute<RowDataPacket[]>(
+        "SELECT COUNT(*) AS count FROM account_access WHERE SecurityLevel >= 3"
+      )
+
+      if (Number(admins[0]?.count ?? 0) > 0) {
+        const error = new Error("SETUP_ALREADY_COMPLETED")
+        error.name = "SETUP_ALREADY_COMPLETED"
+        throw error
+      }
+    }
 
     const [existing] = await connection.execute<RowDataPacket[]>(
       "SELECT id FROM account WHERE username = ? OR email = ? LIMIT 1",
@@ -221,13 +252,21 @@ export async function registerTrinityAccount(input: {
       [result.insertId]
     )
 
+    if (role === "admin") {
+      await connection.execute(
+        `INSERT INTO account_access (AccountID, SecurityLevel, RealmID, Comment)
+         VALUES (?, 3, -1, ?)`,
+        [result.insertId, "AzerothCMS initial administrator"]
+      )
+    }
+
     await connection.commit()
 
     return {
       id: result.insertId,
       username,
       email,
-      role: "player",
+      role,
     }
   } catch (error) {
     await connection.rollback()

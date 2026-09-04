@@ -13,6 +13,8 @@ pnpm dev
 
 复制 `.env.example` 为 `.env.local` 并填写 MySQL 连接信息，然后执行 `sql/cms.sql` 初始化门户数据库。TrinityCore 的连接默认对应本机 `auth`、`world`、`characters` 数据库；注册使用 TrinityCore Grunt SRP6 格式生成 `salt` 与 `verifier`。
 
+首次启动访问 [http://localhost:3000/setup](http://localhost:3000/setup) 进入初始化向导。向导会检查 TrinityCore auth 库和 CMS 库，并在 auth 库尚无管理员时创建首个管理员账号；管理员创建成功后会自动登录后台。CMS SQL 需要使用具备 `CREATE`/`GRANT` 权限的数据库账号执行，应用账号仅需要业务表读写权限。
+
 打开 [http://localhost:3000](http://localhost:3000)。
 
 常用检查命令：
@@ -38,6 +40,7 @@ pnpm build
 | 论坛 | `/forums`、`/forums/[slug]` | 分类、主题详情、发布主题、回复演示 |
 | 商城 | `/shop`、`/shop/[slug]` | 分类筛选、购物车、结算演示 |
 | 认证 | `/login`、`/register` | TrinityCore 账号登录、注册与会话 |
+| 初始化 | `/setup` | 数据库检查、首个管理员创建与 CMS 初始化指引 |
 | 玩家中心 | `/account/*` | 游戏账号、角色、账号设置 |
 | 管理后台 | `/admin/*` | 新闻、Realm、玩家管理与状态操作演示 |
 
@@ -56,6 +59,7 @@ pnpm build
 - `lib/auth.ts`、`lib/trinity-srp6.ts`：服务端会话、TrinityCore 账号注册与认证。
 - `app/api/auth`：注册、登录、退出和会话接口。
 - `app/api/cms/content`：管理员 CMS 内容读取与 JSON upsert 接口。
+- `app/api/setup`、`lib/setup.ts`：首次启动状态检查与首个管理员初始化接口。
 - `lib/session.ts`：客户端会话快照同步。
 - `lib/i18n.ts`：中文优先文案字典。
 - `app/globals.css`：SwiftUI/macOS 视觉令牌、Liquid Glass 材料和响应式基础样式。

@@ -145,6 +145,24 @@ export interface SessionState {
   role?: "admin" | "player"
 }
 
+export type SetupCheckState = "ready" | "missing" | "error"
+
+export interface SetupCheck {
+  state: SetupCheckState
+  database: string
+  message: string
+}
+
+export interface SetupStatus {
+  setupRequired: boolean
+  auth: SetupCheck & {
+    accounts: number
+    admins: number
+    realms: number
+  }
+  cms: SetupCheck
+}
+
 export interface PortalDataProvider {
   getRealms(): Promise<Realm[]>
   getNews(): Promise<NewsArticle[]>
