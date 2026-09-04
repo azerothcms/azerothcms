@@ -28,6 +28,12 @@ interface RealmRow extends RowDataPacket {
   gamebuild: number
 }
 
+interface RealmOverrideRow extends RowDataPacket {
+  realm_id: number
+  status: Realm["status"] | null
+  description: string | null
+}
+
 interface CharacterRow extends RowDataPacket {
   guid: number | string
   account: number
@@ -134,6 +140,17 @@ function classNameForId(classId: number) {
   )[classId] ?? `职业 ${classId}`
 }
 
+function isDatabaseConfigurationError(error: unknown) {
+  const code = (error as { code?: string }).code
+  return [
+    "ER_BAD_DB_ERROR",
+    "ER_NO_SUCH_TABLE",
+    "ER_ACCESS_DENIED_ERROR",
+    "ER_DBACCESS_DENIED_ERROR",
+    "ER_TABLEACCESS_DENIED_ERROR",
+  ].includes(code ?? "")
+}
+
 function emptyPlayerProfile(accountId: number): PlayerProfile {
   return {
     username: `Account ${accountId}`,
@@ -158,11 +175,13 @@ async function getLiveRealms(): Promise<Realm[] | undefined> {
     }
 
     const maxPlayers = Number(process.env.REALM_MAX_PLAYERS ?? "2000")
+    const overrides = await getRealmOverrides(rows.map((realm) => realm.id))
 
     return rows.map<Realm>((realm) => {
       const population = asNumber(realm.population)
       const type: Realm["type"] = realm.icon === 1 ? "PvP" : realm.icon === 6 ? "RP" : "PvE"
-      const status: Realm["status"] = realm.flag & 0x02 ? "offline" : realm.flag & 0x01 ? "maintenance" : "online"
+      const defaultStatus: Realm["status"] = realm.flag & 0x02 ? "offline" : realm.flag & 0x01 ? "maintenance" : "online"
+      const override = overrides.get(realm.id)
 
       return {
         id: `realm-${realm.id}`,
@@ -170,17 +189,45 @@ async function getLiveRealms(): Promise<Realm[] | undefined> {
         name: realm.name,
         expansion: process.env.TRINITY_EXPANSION ?? "TrinityCore",
         type,
-        status,
+        status: override?.status ?? defaultStatus,
         onlinePlayers: Math.round(population * maxPlayers),
         maxPlayers,
         uptime: "实时数据",
-        description: `来自 TrinityCore realmlist 的 ${realm.name} Realm。`,
+        description: override?.description ?? `来自 TrinityCore realmlist 的 ${realm.name} Realm。`,
       }
     })
   } catch (error) {
     console.error("Failed to read TrinityCore realms", error)
     return undefined
   }
+}
+
+async function getRealmOverrides(realmIds: number[]) {
+  const overrides = new Map<number, RealmOverrideRow>()
+
+  if (!realmIds.length) {
+    return overrides
+  }
+
+  try {
+    const placeholders = realmIds.map(() => "?").join(",")
+    const [rows] = await cmsDb.execute<RealmOverrideRow[]>(
+      `SELECT realm_id, status, description
+       FROM realm_override
+       WHERE realm_id IN (${placeholders})`,
+      realmIds
+    )
+
+    for (const row of rows) {
+      overrides.set(row.realm_id, row)
+    }
+  } catch (error) {
+    if (!isDatabaseConfigurationError(error)) {
+      console.error("Failed to read CMS realm overrides", error)
+    }
+  }
+
+  return overrides
 }
 
 async function getLiveCharacters(accountId?: number): Promise<CharacterSummary[] | undefined> {
