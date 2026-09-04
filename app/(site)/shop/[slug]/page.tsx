@@ -75,7 +75,7 @@ export default async function ShopProductPage({ params }: ShopProductPageProps) 
               </ul>
             </CardContent>
           </Card>
-          <p className="mt-5 flex items-start gap-2 text-xs leading-5 text-muted-foreground"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />商城结算、库存和游戏内发放将在后续接入真实服务。</p>
+          <p className="mt-5 flex items-start gap-2 text-xs leading-5 text-muted-foreground"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />订单会写入 CMS；支付、库存和游戏内发放将在后续接入真实服务。</p>
         </div>
       </div>
     </div>

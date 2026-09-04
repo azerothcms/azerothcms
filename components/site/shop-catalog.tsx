@@ -57,6 +57,7 @@ export function ShopCatalog({ products }: { products: ShopProduct[] }) {
   const [activeCategory, setActiveCategory] =
     useState<(typeof categories)[number]>("全部")
   const [status, setStatus] = useState("")
+  const [pending, setPending] = useState(false)
   const cartSnapshot = useSyncExternalStore(
     subscribeMockShopCart,
     getMockShopCartSnapshot,
@@ -105,7 +106,7 @@ export function ShopCatalog({ products }: { products: ShopProduct[] }) {
     setStatus(`${product.name} 已加入购物车。`)
   }
 
-  function checkout() {
+  async function checkout() {
     const currentCart = readMockShopCart()
     const currentCartCount = Object.values(currentCart).reduce(
       (total, quantity) => total + quantity,
@@ -122,14 +123,38 @@ export function ShopCatalog({ products }: { products: ShopProduct[] }) {
       return
     }
 
-    writeMockShopOrder({
-      productIds: Object.keys(currentCart).filter(
-        (productId) => currentCart[productId] > 0
-      ),
-      total: currentCartTotal,
-    })
-    writeMockShopCart({})
-    setStatus(copy.shop.checkoutSuccess)
+    setPending(true)
+
+    try {
+      const response = await fetch("/api/shop/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: Object.entries(currentCart)
+            .filter(([, quantity]) => quantity > 0)
+            .map(([productId, quantity]) => ({ productId, quantity })),
+        }),
+      })
+      const result = (await response.json()) as { error?: string }
+
+      if (!response.ok) {
+        setStatus(result.error ?? "订单提交失败，请稍后重试。")
+        return
+      }
+
+      writeMockShopOrder({
+        productIds: Object.keys(currentCart).filter(
+          (productId) => currentCart[productId] > 0
+        ),
+        total: currentCartTotal,
+      })
+      writeMockShopCart({})
+      setStatus(copy.shop.checkoutSuccess)
+    } catch {
+      setStatus("无法连接商城服务，请稍后重试。")
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
@@ -164,8 +189,8 @@ export function ShopCatalog({ products }: { products: ShopProduct[] }) {
             <ShoppingBag className="size-4 text-primary" aria-hidden="true" />
             {cartCount} 件 · {cartTotal.toLocaleString()} 点券
           </span>
-          <Button size="sm" variant="outline" onClick={checkout}>
-            {copy.shop.checkout}
+          <Button size="sm" variant="outline" onClick={() => void checkout()} disabled={pending}>
+            {pending ? "提交中……" : copy.shop.checkout}
           </Button>
         </div>
       </div>

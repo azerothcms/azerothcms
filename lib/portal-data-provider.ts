@@ -84,6 +84,19 @@ interface ForumReplyRow extends RowDataPacket {
   created_at: Date | string
 }
 
+interface ShopProductRow extends RowDataPacket {
+  id: string
+  slug: string
+  name: string
+  category: ShopProduct["category"]
+  description: string
+  details: unknown
+  price: number | string
+  currency: string
+  accent: ShopProduct["accent"]
+  featured: number
+}
+
 interface CharacterRow extends RowDataPacket {
   guid: number | string
   account: number
@@ -487,6 +500,41 @@ async function getLiveForumThread(slug: string): Promise<ForumThread | undefined
   }
 }
 
+async function getLiveShopProducts(): Promise<ShopProduct[] | undefined> {
+  try {
+    const [rows] = await cmsDb.execute<ShopProductRow[]>(
+      `SELECT id, slug, name, category, description, details, price,
+              currency, accent, featured
+       FROM shop_product
+       WHERE active = TRUE
+       ORDER BY featured DESC, created_at DESC`
+    )
+
+    if (!rows.length) {
+      return undefined
+    }
+
+    return rows.map<ShopProduct>((product) => ({
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      category: product.category,
+      description: product.description,
+      details: parseStringArray(product.details),
+      price: Number(product.price),
+      currency: product.currency,
+      accent: product.accent,
+      featured: Boolean(product.featured),
+    }))
+  } catch (error) {
+    if (!isDatabaseConfigurationError(error)) {
+      console.error("Failed to read CMS shop products", error)
+    }
+
+    return undefined
+  }
+}
+
 async function getLiveProfile(accountId: number): Promise<PlayerProfile | undefined> {
   try {
     const [accounts] = await authDb.execute<AccountRow[]>(
@@ -637,7 +685,7 @@ export const portalDataProvider = {
     return threads.find((thread) => thread.slug === slug)
   },
   getShopProducts(): Promise<ShopProduct[]> {
-    return readContent("shop_products", () => mockPortalDataProvider.getShopProducts())
+    return getLiveShopProducts().then((products) => products ?? readContent("shop_products", () => mockPortalDataProvider.getShopProducts()))
   },
   async getShopProduct(slug: string) {
     const products = await this.getShopProducts()

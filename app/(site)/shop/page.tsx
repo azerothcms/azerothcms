@@ -38,7 +38,7 @@ export default async function ShopPage() {
         </div>
       </div>
       <div className="mt-10 flex items-end justify-between gap-4">
-        <SectionHeading eyebrow="Featured catalog" title="为你的旅程添一件收藏" description="所有商品均为本地演示数据，后续可接入商城与订单服务。" />
+        <SectionHeading eyebrow="Featured catalog" title="为你的旅程添一件收藏" description="商品优先读取 CMS 商品表；CMS 尚未初始化时显示演示目录。" />
         <Link href="/account" className="hidden text-link sm:inline-flex">查看我的账号<ArrowUpRight className="size-4" aria-hidden="true" /></Link>
       </div>
       <div className="mt-8"><ShopCatalog products={products} /></div>
