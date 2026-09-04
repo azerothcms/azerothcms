@@ -5,20 +5,20 @@ import { notFound } from "next/navigation"
 import { ForumThreadActions } from "@/components/site/forum-thread-actions"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { mockPortalDataProvider } from "@/lib/mock-data"
+import { portalDataProvider } from "@/lib/portal-data-provider"
 
 type ForumThreadPageProps = {
   params: Promise<{ slug: string }>
 }
 
 export async function generateStaticParams() {
-  const threads = await mockPortalDataProvider.getForumThreads()
+  const threads = await portalDataProvider.getForumThreads()
   return threads.map((thread) => ({ slug: thread.slug }))
 }
 
 export async function generateMetadata({ params }: ForumThreadPageProps) {
   const { slug } = await params
-  const thread = await mockPortalDataProvider.getForumThread(slug)
+  const thread = await portalDataProvider.getForumThread(slug)
 
   return {
     title: thread?.title ?? "论坛主题",
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: ForumThreadPageProps) {
 
 export default async function ForumThreadPage({ params }: ForumThreadPageProps) {
   const { slug } = await params
-  const thread = await mockPortalDataProvider.getForumThread(slug)
+  const thread = await portalDataProvider.getForumThread(slug)
 
   if (!thread) {
     notFound()

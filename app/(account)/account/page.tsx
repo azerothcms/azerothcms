@@ -23,15 +23,17 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { mockPortalDataProvider } from "@/lib/mock-data"
+import { requireSession } from "@/lib/auth"
+import { portalDataProvider } from "@/lib/portal-data-provider"
 
 export const metadata = {
   title: "玩家中心",
 }
 
 export default async function AccountOverviewPage() {
-  const profile = await mockPortalDataProvider.getPlayerProfile()
-  const realms = await mockPortalDataProvider.getRealms()
+  const session = await requireSession()
+  const profile = await portalDataProvider.getPlayerProfile(session.accountId)
+  const realms = await portalDataProvider.getRealms()
 
   return (
     <div className="mx-auto max-w-6xl">

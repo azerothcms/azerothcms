@@ -2,7 +2,7 @@
 
 中文优先的魔兽世界私服官网与玩家中心 UI 原型。项目采用 Next.js App Router、React、TypeScript、Tailwind CSS 和 shadcn/ui，视觉方向为 SwiftUI/macOS 风格的 Liquid Glass 界面。
 
-当前阶段只验证页面结构、交互闭环和数据边界，不连接真实数据库、模拟器核心、生产认证或后台服务。
+当前项目已接入 MySQL 后端：网站认证注册会写入 TrinityCore 的 `auth.account`，门户自有数据使用独立的 `cms` 数据库及 `cms` 内容表。新闻、论坛、商城等页面数据仍保留 Mock fallback，待内容迁移和管理接口补齐后切换为完整持久化。
 
 ## 快速开始
 
@@ -10,6 +10,8 @@
 pnpm install
 pnpm dev
 ```
+
+复制 `.env.example` 为 `.env.local` 并填写 MySQL 连接信息，然后执行 `sql/cms.sql` 初始化门户数据库。TrinityCore 的连接默认对应本机 `auth`、`world`、`characters` 数据库；注册使用 TrinityCore Grunt SRP6 格式生成 `salt` 与 `verifier`。
 
 打开 [http://localhost:3000](http://localhost:3000)。
 
@@ -21,14 +23,9 @@ pnpm lint
 pnpm build
 ```
 
-## 演示账号
+## 账号与权限
 
-登录页使用固定 Mock 账号：
-
-- 邮箱：`admin@admin.com`
-- 密码：`admin@admin`
-
-登录态仅保存在浏览器本地，用于访问玩家中心和管理员后台。退出登录会清除本地演示会话。
+注册账号直接写入 TrinityCore `auth.account`，密码长度限制为 8-16 个字符以兼容核心。登录使用邮箱或游戏账号；拥有 `auth.account_access.SecurityLevel >= 3` 的账号会获得网站管理员角色。网站会话使用 HttpOnly 签名 Cookie，客户端只保存用于界面同步的非敏感快照。
 
 ## 页面范围
 
@@ -40,7 +37,7 @@ pnpm build
 | Armory | `/armory`、`/armory/character/[id]` | 角色搜索、角色详情、装备信息 |
 | 论坛 | `/forums`、`/forums/[slug]` | 分类、主题详情、发布主题、回复演示 |
 | 商城 | `/shop`、`/shop/[slug]` | 分类筛选、购物车、结算演示 |
-| 认证 | `/login`、`/register` | 登录、注册字段校验与演示流程 |
+| 认证 | `/login`、`/register` | TrinityCore 账号登录、注册与会话 |
 | 玩家中心 | `/account/*` | 游戏账号、角色、账号设置 |
 | 管理后台 | `/admin/*` | 新闻、Realm、玩家管理与状态操作演示 |
 
@@ -54,8 +51,11 @@ pnpm build
 - `components/account`、`components/admin`：玩家中心与后台交互组件。
 - `components/ui`：shadcn/ui Base UI 组件及项目级视觉封装。
 - `lib/types.ts`：领域类型和 `PortalDataProvider` 数据契约。
-- `lib/mock-data.ts`：首期 `MockPortalDataProvider` 实现。
-- `lib/session.ts`：浏览器本地演示会话。
+- `lib/mock-data.ts`：公开页面的 Mock fallback 数据。
+- `lib/db.ts`：MySQL 连接池。
+- `lib/auth.ts`、`lib/trinity-srp6.ts`：服务端会话、TrinityCore 账号注册与认证。
+- `app/api/auth`：注册、登录、退出和会话接口。
+- `lib/session.ts`：客户端会话快照同步。
 - `lib/i18n.ts`：中文优先文案字典。
 - `app/globals.css`：SwiftUI/macOS 视觉令牌、Liquid Glass 材料和响应式基础样式。
 
@@ -72,4 +72,4 @@ pnpm build
 
 ## 当前边界
 
-论坛、商城、管理员后台目前是可点击的 Mock UI；论坛主题、回复、新闻草稿、Realm 状态和玩家状态会暂存在当前浏览器的 `localStorage`，真实数据库、模拟器核心同步、支付、邮件验证、文件上传、权限审计和 CMS 发布服务留待后续阶段。
+论坛、商城、新闻内容目前仍支持 Mock fallback；真实支付、邮件验证、文件上传、权限审计、装备/公会详情同步和 CMS 发布服务留待后续阶段。

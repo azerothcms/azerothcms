@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowUpRight, Coins, ShieldCheck, Sparkles } from "lucide-re
 import { SectionHeading } from "@/components/site/section-heading"
 import { ShopCatalog } from "@/components/site/shop-catalog"
 import { copy } from "@/lib/i18n"
-import { mockPortalDataProvider } from "@/lib/mock-data"
+import { portalDataProvider } from "@/lib/portal-data-provider"
 
 export const metadata = {
   title: copy.shop.title,
@@ -12,7 +12,7 @@ export const metadata = {
 }
 
 export default async function ShopPage() {
-  const products = await mockPortalDataProvider.getShopProducts()
+  const products = await portalDataProvider.getShopProducts()
 
   return (
     <div className="content-shell page-section">

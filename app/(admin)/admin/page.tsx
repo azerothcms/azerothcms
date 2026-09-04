@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { SectionHeading } from "@/components/site/section-heading"
-import { mockPortalDataProvider } from "@/lib/mock-data"
+import { portalDataProvider } from "@/lib/portal-data-provider"
 
 export const metadata = {
   title: "管理后台",
@@ -20,10 +20,10 @@ export const metadata = {
 
 export default async function AdminOverviewPage() {
   const [overview, articles, realms, users] = await Promise.all([
-    mockPortalDataProvider.getAdminOverview(),
-    mockPortalDataProvider.getNews(),
-    mockPortalDataProvider.getRealms(),
-    mockPortalDataProvider.getAdminUsers(),
+    portalDataProvider.getAdminOverview(),
+    portalDataProvider.getNews(),
+    portalDataProvider.getRealms(),
+    portalDataProvider.getAdminUsers(),
   ])
 
   const stats = [

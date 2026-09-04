@@ -4,7 +4,7 @@ import { Activity, ArrowLeft, Clock3, Server, Users } from "lucide-react"
 import { RealmCard } from "@/components/site/realm-card"
 import { SectionHeading } from "@/components/site/section-heading"
 import { StatusBadge } from "@/components/site/status-badge"
-import { mockPortalDataProvider } from "@/lib/mock-data"
+import { portalDataProvider } from "@/lib/portal-data-provider"
 
 export const metadata = {
   title: "服务器状态",
@@ -12,7 +12,7 @@ export const metadata = {
 }
 
 export default async function RealmsPage() {
-  const realms = await mockPortalDataProvider.getRealms()
+  const realms = await portalDataProvider.getRealms()
   const onlineCount = realms.filter((realm) => realm.status === "online").length
   const totalPlayers = realms.reduce((total, realm) => total + realm.onlinePlayers, 0)
 
@@ -26,7 +26,7 @@ export default async function RealmsPage() {
         className="mt-8"
         eyebrow="Realm status"
         title="服务器状态"
-        description="选择一个 Realm，开始你的下一段冒险。所有状态均为原型演示数据。"
+        description="选择一个 Realm，开始你的下一段冒险。状态与在线人数来自 TrinityCore。"
       />
       <div className="mt-10 grid gap-3 sm:grid-cols-3">
         {[
@@ -53,7 +53,7 @@ export default async function RealmsPage() {
       </div>
       <div className="mt-10 flex items-start gap-3 rounded-2xl border border-border/70 bg-muted/35 p-5 text-sm text-muted-foreground">
         <Clock3 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-        <p>服务器数据将在真实接入阶段由 Realm adapter 提供；当前页面用于验证布局和状态展示。</p>
+        <p>服务器状态和在线人数由 TrinityCore 的 realmlist 实时提供；可用性统计仍需接入历史 uptime 数据。</p>
         <StatusBadge status="online" />
       </div>
     </div>

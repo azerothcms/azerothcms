@@ -2,15 +2,17 @@ import Link from "next/link"
 import { ArrowLeft, Search, Swords } from "lucide-react"
 
 import { CharacterCard } from "@/components/site/character-card"
-import { mockPortalDataProvider } from "@/lib/mock-data"
+import { portalDataProvider } from "@/lib/portal-data-provider"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { requireSession } from "@/lib/auth"
 
 export const metadata = {
   title: "我的角色",
 }
 
 export default async function AccountCharactersPage() {
-  const profile = await mockPortalDataProvider.getPlayerProfile()
+  const session = await requireSession()
+  const profile = await portalDataProvider.getPlayerProfile(session.accountId)
   const highestItemLevel = profile.characters.length
     ? Math.max(...profile.characters.map((character) => character.itemLevel))
     : 0

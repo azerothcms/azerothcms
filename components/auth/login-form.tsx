@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react"
+import { ArrowRight, Eye, EyeOff, LockKeyhole, UserRound } from "lucide-react"
 import { FormEvent, useState } from "react"
 import { useRouter } from "next/navigation"
 
@@ -10,30 +10,47 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { GlassNotice } from "@/components/ui/glass-notice"
 import { Input } from "@/components/ui/input"
 import { copy } from "@/lib/i18n"
-import { DEMO_CREDENTIALS, startDemoSession } from "@/lib/session"
+import { setClientSession } from "@/lib/session"
+import type { SessionState } from "@/lib/types"
 
 export function LoginForm() {
   const router = useRouter()
-  const [email, setEmail] = useState<string>(DEMO_CREDENTIALS.email)
-  const [password, setPassword] = useState<string>(DEMO_CREDENTIALS.password)
+  const [identifier, setIdentifier] = useState("")
+  const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
+  const [pending, setPending] = useState(false)
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!email || !password) {
+    if (!identifier.trim() || !password) {
       setError(copy.auth.required)
       return
     }
 
-    if (email !== DEMO_CREDENTIALS.email || password !== DEMO_CREDENTIALS.password) {
-      setError(copy.auth.invalid)
-      return
-    }
+    setPending(true)
 
-    startDemoSession()
-    router.push("/account")
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier, password }),
+      })
+      const data = (await response.json()) as { error?: string; session?: SessionState }
+
+      if (!response.ok || !data.session) {
+        setError(data.error ?? copy.auth.invalid)
+        return
+      }
+
+      setClientSession(data.session)
+      router.push("/account")
+    } catch {
+      setError("无法连接认证服务，请稍后重试。")
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
@@ -48,20 +65,20 @@ export function LoginForm() {
       <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
         <FieldGroup>
           <Field data-invalid={Boolean(error)}>
-            <FieldLabel htmlFor="login-email">{copy.auth.email}</FieldLabel>
+            <FieldLabel htmlFor="login-identifier">{copy.auth.loginIdentifier}</FieldLabel>
             <span className="input-with-icon">
-            <Mail className="input-icon" aria-hidden="true" />
+            <UserRound className="input-icon" aria-hidden="true" />
             <Input
-              id="login-email"
-              type="email"
-              autoComplete="email"
-              value={email}
+              id="login-identifier"
+              type="text"
+              autoComplete="username"
+              value={identifier}
               onChange={(event) => {
-                setEmail(event.target.value)
+                setIdentifier(event.target.value)
                 setError("")
               }}
               className="field-input pl-10"
-              placeholder="you@example.com"
+              placeholder="邮箱或游戏账号"
               required
               aria-invalid={Boolean(error) || undefined}
             />
@@ -97,13 +114,13 @@ export function LoginForm() {
           </Field>
         </FieldGroup>
         {error ? <GlassNotice tone="error">{error}</GlassNotice> : null}
-        <Button type="submit" size="lg" className="h-11 w-full justify-between px-4">
+        <Button type="submit" size="lg" disabled={pending} className="h-11 w-full justify-between px-4">
           {copy.auth.login}
           <ArrowRight data-icon="inline-end" aria-hidden="true" />
         </Button>
       </form>
       <div className="mt-5 rounded-xl border border-primary/20 bg-primary/6 px-4 py-3 text-xs leading-5 text-muted-foreground">
-        <span className="font-medium text-primary">Demo</span> · {copy.auth.demoHint}
+        <span className="font-medium text-primary">TrinityCore</span> · {copy.auth.demoHint}
       </div>
       <p className="mt-8 text-center text-sm text-muted-foreground">
         {copy.auth.noAccount}{" "}

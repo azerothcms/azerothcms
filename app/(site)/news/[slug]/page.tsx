@@ -5,7 +5,8 @@ import { notFound } from "next/navigation"
 
 import { ArticleShareButton } from "@/components/site/article-share-button"
 import { copy } from "@/lib/i18n"
-import { mockPortalDataProvider, news } from "@/lib/mock-data"
+import { news } from "@/lib/mock-data"
+import { portalDataProvider } from "@/lib/portal-data-provider"
 
 interface NewsDetailPageProps {
   params: Promise<{ slug: string }>
@@ -17,7 +18,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: NewsDetailPageProps): Promise<Metadata> {
   const { slug } = await params
-  const article = await mockPortalDataProvider.getNewsArticle(slug)
+  const article = await portalDataProvider.getNewsArticle(slug)
 
   return {
     title: article?.title ?? "社区动态",
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: NewsDetailPageProps): Promise
 
 export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
   const { slug } = await params
-  const article = await mockPortalDataProvider.getNewsArticle(slug)
+  const article = await portalDataProvider.getNewsArticle(slug)
 
   if (!article) {
     notFound()

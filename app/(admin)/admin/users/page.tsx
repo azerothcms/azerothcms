@@ -11,12 +11,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { mockPortalDataProvider } from "@/lib/mock-data"
+import { portalDataProvider } from "@/lib/portal-data-provider"
 
 export const metadata = { title: "玩家管理" }
 
 export default async function AdminUsersPage() {
-  const users = await mockPortalDataProvider.getAdminUsers()
+  const users = await portalDataProvider.getAdminUsers()
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -29,7 +29,7 @@ export default async function AdminUsersPage() {
       <Card className="glass-surface mt-8">
         <CardHeader>
           <CardTitle>玩家账号</CardTitle>
-          <CardDescription>演示环境中的账号状态与管理动作。</CardDescription>
+          <CardDescription>来自 TrinityCore auth.account 的账号状态与角色统计。</CardDescription>
         </CardHeader>
         <CardContent className="px-0">
           <Table className="min-w-[760px]">
@@ -80,7 +80,7 @@ export default async function AdminUsersPage() {
 
       <div className="mt-5 flex items-start gap-3 rounded-2xl border border-primary/20 bg-primary/6 p-5 text-xs leading-5 text-muted-foreground">
         <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-        <p>当前账号状态切换会保存在当前浏览器；玩家封禁、角色查询、邮件验证与权限变更将在真实账户服务接入后开放。</p>
+        <p>账号列表已接入 TrinityCore；玩家封禁、邮件验证与权限变更仍需补充安全的管理接口。</p>
       </div>
     </div>
   )

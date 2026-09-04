@@ -10,7 +10,8 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { GlassNotice } from "@/components/ui/glass-notice"
 import { Input } from "@/components/ui/input"
 import { copy } from "@/lib/i18n"
-import { startDemoSession } from "@/lib/session"
+import { setClientSession } from "@/lib/session"
+import type { SessionState } from "@/lib/types"
 
 export function RegisterForm() {
   const router = useRouter()
@@ -20,8 +21,9 @@ export function RegisterForm() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
+  const [pending, setPending] = useState(false)
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const normalizedEmail = email.trim()
@@ -36,8 +38,15 @@ export function RegisterForm() {
       return
     }
 
-    if (password.length < 8) {
+    const passwordLength = Array.from(password).length
+
+    if (passwordLength < 8) {
       setError(copy.auth.passwordTooShort)
+      return
+    }
+
+    if (passwordLength > 16) {
+      setError(copy.auth.passwordTooLong)
       return
     }
 
@@ -46,8 +55,28 @@ export function RegisterForm() {
       return
     }
 
-    startDemoSession(username.trim(), normalizedEmail, "player")
-    router.push("/account")
+    setPending(true)
+
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username.trim(), email: normalizedEmail, password }),
+      })
+      const data = (await response.json()) as { error?: string; session?: SessionState }
+
+      if (!response.ok || !data.session) {
+        setError(data.error ?? "注册失败，请稍后重试。")
+        return
+      }
+
+      setClientSession(data.session)
+      router.push("/account")
+    } catch {
+      setError("无法连接认证服务，请稍后重试。")
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
@@ -56,7 +85,7 @@ export function RegisterForm() {
         <p className="eyebrow">Join the community</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">创建你的旅程</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          创建一个演示账号，体验 Azeroth CMS 的玩家中心。
+          注册一个真实的 TrinityCore 游戏账号，并进入 Azeroth CMS 玩家中心。
         </p>
       </div>
       <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
@@ -151,7 +180,7 @@ export function RegisterForm() {
           </Field>
         </FieldGroup>
         {error ? <GlassNotice tone="error">{error}</GlassNotice> : null}
-        <Button type="submit" size="lg" className="h-11 w-full justify-between px-4">
+        <Button type="submit" size="lg" disabled={pending} className="h-11 w-full justify-between px-4">
           {copy.auth.register}
           <ArrowRight data-icon="inline-end" aria-hidden="true" />
         </Button>

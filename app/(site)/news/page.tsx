@@ -4,7 +4,7 @@ import Link from "next/link"
 import { NewsCatalog } from "@/components/site/news-catalog"
 import { SectionHeading } from "@/components/site/section-heading"
 import { copy } from "@/lib/i18n"
-import { mockPortalDataProvider } from "@/lib/mock-data"
+import { portalDataProvider } from "@/lib/portal-data-provider"
 
 export const metadata = {
   title: "社区动态",
@@ -12,7 +12,7 @@ export const metadata = {
 }
 
 export default async function NewsPage() {
-  const articles = await mockPortalDataProvider.getNews()
+  const articles = await portalDataProvider.getNews()
 
   return (
     <div className="content-shell page-section">

@@ -139,6 +139,7 @@ export interface AdminUserSummary {
 
 export interface SessionState {
   authenticated: boolean
+  accountId?: number
   username?: string
   email?: string
   role?: "admin" | "player"
@@ -150,7 +151,7 @@ export interface PortalDataProvider {
   getNewsArticle(slug: string): Promise<NewsArticle | undefined>
   getCharacters(): Promise<CharacterSummary[]>
   getCharacter(id: string): Promise<CharacterSummary | undefined>
-  getPlayerProfile(): Promise<PlayerProfile>
+  getPlayerProfile(accountId?: number): Promise<PlayerProfile>
   getForumCategories(): Promise<ForumCategory[]>
   getForumThreads(): Promise<ForumThread[]>
   getForumThread(slug: string): Promise<ForumThread | undefined>

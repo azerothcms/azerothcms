@@ -3,12 +3,12 @@ import { Activity, Gauge, Server } from "lucide-react"
 import { AdminRealmActions } from "@/components/admin/admin-realm-actions"
 import { SectionHeading } from "@/components/site/section-heading"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { mockPortalDataProvider } from "@/lib/mock-data"
+import { portalDataProvider } from "@/lib/portal-data-provider"
 
 export const metadata = { title: "Realm 管理" }
 
 export default async function AdminRealmsPage() {
-  const realms = await mockPortalDataProvider.getRealms()
+  const realms = await portalDataProvider.getRealms()
 
   return (
     <div className="mx-auto max-w-6xl">

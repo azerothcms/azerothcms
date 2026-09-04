@@ -4,20 +4,20 @@ import { notFound } from "next/navigation"
 
 import { ShopPurchaseAction } from "@/components/site/shop-purchase-action"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { mockPortalDataProvider } from "@/lib/mock-data"
+import { portalDataProvider } from "@/lib/portal-data-provider"
 
 type ShopProductPageProps = {
   params: Promise<{ slug: string }>
 }
 
 export async function generateStaticParams() {
-  const products = await mockPortalDataProvider.getShopProducts()
+  const products = await portalDataProvider.getShopProducts()
   return products.map((product) => ({ slug: product.slug }))
 }
 
 export async function generateMetadata({ params }: ShopProductPageProps) {
   const { slug } = await params
-  const product = await mockPortalDataProvider.getShopProduct(slug)
+  const product = await portalDataProvider.getShopProduct(slug)
 
   return {
     title: product?.name ?? "商城商品",
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: ShopProductPageProps) {
 
 export default async function ShopProductPage({ params }: ShopProductPageProps) {
   const { slug } = await params
-  const product = await mockPortalDataProvider.getShopProduct(slug)
+  const product = await portalDataProvider.getShopProduct(slug)
 
   if (!product) {
     notFound()

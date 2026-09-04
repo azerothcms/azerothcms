@@ -1,11 +1,6 @@
 import type { SessionState } from "@/lib/types"
 
-export const DEMO_CREDENTIALS = {
-  email: "admin@admin.com",
-  password: "admin@admin",
-} as const
-
-const SESSION_KEY = "azerothcms-demo-session"
+const SESSION_KEY = "azerothcms-session"
 export const DEMO_SESSION_EVENT = "azerothcms-demo-session-change"
 
 export function getDemoSession(): SessionState {
@@ -26,18 +21,7 @@ export function getDemoSession(): SessionState {
   }
 }
 
-export function startDemoSession(
-  username: string = "Admin",
-  email: string = DEMO_CREDENTIALS.email,
-  role: "admin" | "player" = "admin"
-) {
-  const session: SessionState = {
-    authenticated: true,
-    username,
-    email,
-    role,
-  }
-
+export function setClientSession(session: SessionState) {
   window.localStorage.setItem(SESSION_KEY, JSON.stringify(session))
   window.dispatchEvent(new Event(DEMO_SESSION_EVENT))
 }

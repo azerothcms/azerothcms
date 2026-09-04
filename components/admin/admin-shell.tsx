@@ -11,6 +11,7 @@ import { ConsoleMobileNav } from "@/components/console/console-mobile-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { SkipToContent } from "@/components/skip-to-content"
 import { copy } from "@/lib/i18n"
+import type { SessionState } from "@/lib/types"
 import {
   clearDemoSession,
   getDemoSession,
@@ -29,7 +30,13 @@ const adminLinks = [
   { href: "/admin/users", label: copy.admin.users, icon: Users },
 ]
 
-export function AdminShell({ children }: { children: ReactNode }) {
+export function AdminShell({
+  children,
+  initialSession,
+}: {
+  children: ReactNode
+  initialSession?: SessionState
+}) {
   const pathname = usePathname()
   const router = useRouter()
   const authenticated = useSyncExternalStore(
@@ -38,15 +45,18 @@ export function AdminShell({ children }: { children: ReactNode }) {
     getServerDemoSessionSnapshot
   )
   const hydrated = useSyncExternalStore(subscribeHydration, getHydrationSnapshot, getServerHydrationSnapshot)
-  const session = getDemoSession()
+  const clientSession = getDemoSession()
+  const session = clientSession.authenticated ? clientSession : initialSession ?? clientSession
   const isAdmin = session.role === "admin"
+  const hasSession = authenticated || Boolean(initialSession?.authenticated)
+  const initialSessionAuthenticated = Boolean(initialSession?.authenticated)
 
   useEffect(() => {
     if (!hydrated) {
       return
     }
 
-    if (!authenticated) {
+    if (!authenticated && !initialSessionAuthenticated) {
       router.replace("/login")
       return
     }
@@ -54,14 +64,15 @@ export function AdminShell({ children }: { children: ReactNode }) {
     if (!isAdmin) {
       router.replace("/account")
     }
-  }, [authenticated, hydrated, isAdmin, router])
+  }, [authenticated, hydrated, initialSessionAuthenticated, isAdmin, router])
 
-  function handleLogout() {
+  async function handleLogout() {
     clearDemoSession()
+    await fetch("/api/auth/logout", { method: "POST" })
     router.push("/")
   }
 
-  if (!hydrated || !authenticated || !isAdmin) {
+  if (!hydrated || !hasSession || !isAdmin) {
     return null
   }
 

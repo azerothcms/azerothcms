@@ -5,12 +5,12 @@ import { SectionHeading } from "@/components/site/section-heading"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { mockPortalDataProvider } from "@/lib/mock-data"
+import { portalDataProvider } from "@/lib/portal-data-provider"
 
 export const metadata = { title: "新闻管理" }
 
 export default async function AdminNewsPage() {
-  const articles = await mockPortalDataProvider.getNews()
+  const articles = await portalDataProvider.getNews()
 
   return (
     <div className="mx-auto max-w-6xl">

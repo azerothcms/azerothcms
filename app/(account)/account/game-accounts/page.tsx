@@ -2,16 +2,18 @@ import Link from "next/link"
 import { ArrowLeft, LockKeyhole } from "lucide-react"
 
 import { GameAccountActions } from "@/components/account/game-account-actions"
+import { portalDataProvider } from "@/lib/portal-data-provider"
 import { GameAccountList } from "@/components/account/game-account-list"
-import { mockPortalDataProvider } from "@/lib/mock-data"
 import { Card, CardContent } from "@/components/ui/card"
+import { requireSession } from "@/lib/auth"
 
 export const metadata = {
   title: "游戏账号",
 }
 
 export default async function GameAccountsPage() {
-  const profile = await mockPortalDataProvider.getPlayerProfile()
+  const session = await requireSession()
+  const profile = await portalDataProvider.getPlayerProfile(session.accountId)
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -40,14 +42,8 @@ export default async function GameAccountsPage() {
 
       <Card size="sm" className="glass-surface mt-8">
         <CardContent className="flex items-start gap-3 text-sm leading-6 text-muted-foreground">
-          <LockKeyhole
-            className="mt-1 size-4 shrink-0 text-primary"
-            aria-hidden="true"
-          />
-          <p>
-            账号管理在原型阶段仅展示本地演示状态。真实版本将通过核心适配器安全访问
-            auth 数据库。
-          </p>
+          <LockKeyhole className="mt-1 size-4 shrink-0 text-primary" aria-hidden="true" />
+          <p>账号状态与角色数量来自 TrinityCore auth 和 characters 数据库；新增游戏账号功能需后续接入核心服务。</p>
         </CardContent>
       </Card>
     </div>

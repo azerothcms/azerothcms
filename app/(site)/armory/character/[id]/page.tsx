@@ -4,7 +4,8 @@ import { ArrowLeft, Clock3, Crown, HeartPulse, Shield, Swords, Trophy, Zap } fro
 import { notFound } from "next/navigation"
 
 import { copy } from "@/lib/i18n"
-import { characters, mockPortalDataProvider } from "@/lib/mock-data"
+import { characters } from "@/lib/mock-data"
+import { portalDataProvider } from "@/lib/portal-data-provider"
 import { cn } from "@/lib/utils"
 
 interface CharacterPageProps {
@@ -17,7 +18,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: CharacterPageProps): Promise<Metadata> {
   const { id } = await params
-  const character = await mockPortalDataProvider.getCharacter(id)
+  const character = await portalDataProvider.getCharacter(id)
 
   return {
     title: character ? `${character.name} · Armory` : "Armory",
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: CharacterPageProps): Promise<
 
 export default async function CharacterPage({ params }: CharacterPageProps) {
   const { id } = await params
-  const character = await mockPortalDataProvider.getCharacter(id)
+  const character = await portalDataProvider.getCharacter(id)
 
   if (!character) {
     notFound()
@@ -121,7 +122,7 @@ export default async function CharacterPage({ params }: CharacterPageProps) {
           <Link href="/account/characters" className="text-link mt-8">查看我的角色<span aria-hidden="true">→</span></Link>
         </section>
       </div>
-      <p className="mt-8 text-center text-xs text-muted-foreground">{copy.common.updated}：原型演示数据</p>
+      <p className="mt-8 text-center text-xs text-muted-foreground">{copy.common.updated}：角色基础数据来自 TrinityCore characters</p>
     </div>
   )
 }

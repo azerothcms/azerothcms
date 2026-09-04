@@ -3,7 +3,7 @@ import { ArrowLeft, Crown, Search, ShieldCheck } from "lucide-react"
 
 import { ArmoryExplorer } from "@/components/site/armory-explorer"
 import { SectionHeading } from "@/components/site/section-heading"
-import { mockPortalDataProvider } from "@/lib/mock-data"
+import { portalDataProvider } from "@/lib/portal-data-provider"
 
 export const metadata = {
   title: "Armory",
@@ -11,7 +11,7 @@ export const metadata = {
 }
 
 export default async function ArmoryPage() {
-  const characters = await mockPortalDataProvider.getCharacters()
+  const characters = await portalDataProvider.getCharacters()
 
   return (
     <div className="content-shell page-section">

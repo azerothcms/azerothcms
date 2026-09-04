@@ -2,15 +2,17 @@ import Link from "next/link"
 import { ArrowLeft, Settings2 } from "lucide-react"
 
 import { ProfileSettingsForm } from "@/components/account/profile-settings-form"
-import { mockPortalDataProvider } from "@/lib/mock-data"
+import { portalDataProvider } from "@/lib/portal-data-provider"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { requireSession } from "@/lib/auth"
 
 export const metadata = {
   title: "账号设置",
 }
 
 export default async function AccountSettingsPage() {
-  const profile = await mockPortalDataProvider.getPlayerProfile()
+  const session = await requireSession()
+  const profile = await portalDataProvider.getPlayerProfile(session.accountId)
 
   return (
     <div className="mx-auto max-w-5xl">

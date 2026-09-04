@@ -17,13 +17,13 @@ import { RealmCard } from "@/components/site/realm-card"
 import { SectionHeading } from "@/components/site/section-heading"
 import { StatusBadge } from "@/components/site/status-badge"
 import { copy } from "@/lib/i18n"
-import { mockPortalDataProvider } from "@/lib/mock-data"
+import { portalDataProvider } from "@/lib/portal-data-provider"
 
 export default async function HomePage() {
   const [realms, articles, characters] = await Promise.all([
-    mockPortalDataProvider.getRealms(),
-    mockPortalDataProvider.getNews(),
-    mockPortalDataProvider.getCharacters(),
+    portalDataProvider.getRealms(),
+    portalDataProvider.getNews(),
+    portalDataProvider.getCharacters(),
   ])
   const onlinePlayers = realms.reduce((total, realm) => total + realm.onlinePlayers, 0)
   const onlineRealms = realms.filter((realm) => realm.status === "online")

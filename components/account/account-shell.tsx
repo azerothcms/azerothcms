@@ -11,6 +11,7 @@ import { ConsoleMobileNav } from "@/components/console/console-mobile-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { SkipToContent } from "@/components/skip-to-content"
 import { copy } from "@/lib/i18n"
+import type { SessionState } from "@/lib/types"
 import {
   clearDemoSession,
   getDemoSession,
@@ -29,7 +30,13 @@ const accountLinks = [
   { href: "/account/settings", label: copy.account.settings, icon: Settings },
 ]
 
-export function AccountShell({ children }: { children: ReactNode }) {
+export function AccountShell({
+  children,
+  initialSession,
+}: {
+  children: ReactNode
+  initialSession?: SessionState
+}) {
   const pathname = usePathname()
   const router = useRouter()
   const authenticated = useSyncExternalStore(
@@ -38,24 +45,28 @@ export function AccountShell({ children }: { children: ReactNode }) {
     getServerDemoSessionSnapshot
   )
   const hydrated = useSyncExternalStore(subscribeHydration, getHydrationSnapshot, getServerHydrationSnapshot)
-  const session = getDemoSession()
+  const clientSession = getDemoSession()
+  const session = clientSession.authenticated ? clientSession : initialSession ?? clientSession
+  const hasSession = authenticated || Boolean(initialSession?.authenticated)
+  const initialSessionAuthenticated = Boolean(initialSession?.authenticated)
 
   useEffect(() => {
     if (!hydrated) {
       return
     }
 
-    if (!authenticated) {
+    if (!authenticated && !initialSessionAuthenticated) {
       router.replace("/login")
     }
-  }, [authenticated, hydrated, router])
+  }, [authenticated, hydrated, initialSessionAuthenticated, router])
 
-  function handleLogout() {
+  async function handleLogout() {
     clearDemoSession()
+    await fetch("/api/auth/logout", { method: "POST" })
     router.push("/")
   }
 
-  if (!hydrated || !authenticated || !session.authenticated) {
+  if (!hydrated || !hasSession || !session.authenticated) {
     return null
   }
 

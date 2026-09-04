@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Separator } from "@/components/ui/separator"
 import { copy } from "@/lib/i18n"
-import { mockPortalDataProvider } from "@/lib/mock-data"
+import { portalDataProvider } from "@/lib/portal-data-provider"
 
 export const metadata = {
   title: copy.forum.title,
@@ -23,8 +23,8 @@ const categoryStyles = {
 
 export default async function ForumsPage() {
   const [categories, threads] = await Promise.all([
-    mockPortalDataProvider.getForumCategories(),
-    mockPortalDataProvider.getForumThreads(),
+    portalDataProvider.getForumCategories(),
+    portalDataProvider.getForumThreads(),
   ])
   const totalThreads = categories.reduce((total, category) => total + category.threadCount, 0)
 
