@@ -50,7 +50,7 @@ export default async function AdminNewsPage() {
           </div>
         </CardContent>
       </Card>
-      <p className="mt-5 text-xs leading-5 text-muted-foreground">新闻编辑器、草稿保存、定时发布与权限审核将在接入真实后台服务后开放。</p>
+      <p className="mt-5 text-xs leading-5 text-muted-foreground">当前新闻编辑器与草稿创建用于 Mock 演示，草稿保存在当前浏览器；定时发布、权限审核与真实内容服务将在后续接入。</p>
     </div>
   )
 }

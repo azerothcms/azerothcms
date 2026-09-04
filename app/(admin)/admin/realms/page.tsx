@@ -41,7 +41,7 @@ export default async function AdminRealmsPage() {
           </Card>
         ))}
       </div>
-      <p className="mt-5 text-xs leading-5 text-muted-foreground">真实版本将在这里接入 Realm adapter、在线人数采集、维护窗口和操作审计。</p>
+      <p className="mt-5 text-xs leading-5 text-muted-foreground">当前状态切换会保存在当前浏览器；真实版本将在这里接入 Realm adapter、在线人数采集、维护窗口和操作审计。</p>
     </div>
   )
 }

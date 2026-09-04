@@ -1,8 +1,7 @@
 import { Mail, ShieldCheck, UserRound } from "lucide-react"
 
-import { AdminUserActions } from "@/components/admin/admin-user-actions"
+import { AdminUserActions, AdminUserStatus } from "@/components/admin/admin-user-actions"
 import { SectionHeading } from "@/components/site/section-heading"
-import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -13,12 +12,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { mockPortalDataProvider } from "@/lib/mock-data"
-
-const statusVariants = {
-  正常: "secondary",
-  待验证: "outline",
-  已暂停: "destructive",
-} as const
 
 export const metadata = { title: "玩家管理" }
 
@@ -73,7 +66,7 @@ export default async function AdminUsersPage() {
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">{user.characters} 个角色</TableCell>
                   <TableCell>
-                    <Badge variant={statusVariants[user.status]}>{user.status}</Badge>
+                    <AdminUserStatus user={user} />
                   </TableCell>
                   <TableCell className="pr-6 text-right">
                     <AdminUserActions user={user} />
@@ -87,7 +80,7 @@ export default async function AdminUsersPage() {
 
       <div className="mt-5 flex items-start gap-3 rounded-2xl border border-primary/20 bg-primary/6 p-5 text-xs leading-5 text-muted-foreground">
         <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-        <p>玩家封禁、角色查询、邮件验证与权限变更将在真实账户服务接入后开放。</p>
+        <p>当前账号状态切换会保存在当前浏览器；玩家封禁、角色查询、邮件验证与权限变更将在真实账户服务接入后开放。</p>
       </div>
     </div>
   )

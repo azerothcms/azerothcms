@@ -1,7 +1,17 @@
 import Link from "next/link"
-import { ArrowUpRight, CalendarDays, ChevronRight, Gamepad2, Shield, Swords, Trophy, Users } from "lucide-react"
+import {
+  ArrowUpRight,
+  CalendarDays,
+  ChevronRight,
+  Gamepad2,
+  Shield,
+  Swords,
+  Trophy,
+  Users,
+} from "lucide-react"
 
 import { AccountGreeting } from "@/components/account/account-greeting"
+import { GameAccountCount } from "@/components/account/game-account-list"
 import { CharacterCard } from "@/components/site/character-card"
 import { StatusBadge } from "@/components/site/status-badge"
 import {
@@ -29,9 +39,14 @@ export default async function AccountOverviewPage() {
         <div>
           <p className="eyebrow">Player dashboard</p>
           <AccountGreeting fallback={profile.username} />
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">这里是你的艾泽拉斯控制台。</p>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            这里是你的艾泽拉斯控制台。
+          </p>
         </div>
-        <Link href="/armory" className="secondary-action self-start sm:self-auto">
+        <Link
+          href="/armory"
+          className="secondary-action self-start sm:self-auto"
+        >
           探索 Armory
           <ArrowUpRight className="size-4" aria-hidden="true" />
         </Link>
@@ -39,7 +54,11 @@ export default async function AccountOverviewPage() {
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          { label: "游戏账号", value: profile.gameAccounts.length, icon: Gamepad2 },
+          {
+            label: "游戏账号",
+            value: profile.gameAccounts.length,
+            icon: Gamepad2,
+          },
           { label: "我的角色", value: profile.characters.length, icon: Swords },
           { label: "成就点数", value: "29,620", icon: Trophy },
           { label: "加入时间", value: profile.memberSince, icon: CalendarDays },
@@ -50,10 +69,20 @@ export default async function AccountOverviewPage() {
             <Card key={stat.label} size="sm" className="glass-surface">
               <CardHeader>
                 <Icon className="size-4 text-primary" aria-hidden="true" />
-                <CardTitle className="mt-4 text-xs text-muted-foreground">{stat.label}</CardTitle>
+                <CardTitle className="mt-4 text-xs text-muted-foreground">
+                  {stat.label}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="truncate font-mono text-2xl font-semibold text-foreground">{stat.value}</p>
+                {stat.label === "游戏账号" ? (
+                  <GameAccountCount
+                    initialCount={profile.gameAccounts.length}
+                  />
+                ) : (
+                  <p className="truncate font-mono text-2xl font-semibold text-foreground">
+                    {stat.value}
+                  </p>
+                )}
               </CardContent>
             </Card>
           )
@@ -96,7 +125,9 @@ export default async function AccountOverviewPage() {
                   {index > 0 ? <Separator /> : null}
                   <div className="flex items-center justify-between gap-3 py-4 first:pt-0 last:pb-0">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">{realm.name}</p>
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {realm.name}
+                      </p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {realm.onlinePlayers.toLocaleString()} 在线玩家
                       </p>
@@ -121,8 +152,12 @@ export default async function AccountOverviewPage() {
               <Shield className="size-5" aria-hidden="true" />
             </span>
             <div>
-              <p className="text-sm font-semibold text-foreground">你的账号受到保护</p>
-              <p className="mt-1 text-sm text-muted-foreground">完成邮箱验证后可解锁更多玩家中心功能。</p>
+              <p className="text-sm font-semibold text-foreground">
+                你的账号受到保护
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                完成邮箱验证后可解锁更多玩家中心功能。
+              </p>
             </div>
           </div>
           <Link href="/account/settings" className="text-link shrink-0">

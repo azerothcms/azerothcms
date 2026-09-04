@@ -367,6 +367,53 @@
     backdrop-filter: blur(24px) saturate(140%);
   }
 
+  .forum-editor-content {
+    @apply relative min-h-40 border border-input border-t-0 bg-background/45 px-3 py-3 text-sm leading-7 text-foreground outline-none transition;
+    box-shadow: inset 0 1px 0 var(--glass-highlight);
+  }
+
+  .forum-editor-content:focus-visible {
+    @apply ring-3 ring-primary/10;
+    border-color: color-mix(in oklch, var(--primary) 60%, var(--input));
+  }
+
+  .forum-editor-content[aria-invalid="true"] {
+    border-color: var(--destructive);
+  }
+
+  .forum-editor-content[data-empty="true"]::before {
+    content: attr(data-placeholder);
+    @apply pointer-events-none absolute left-3 top-3 text-muted-foreground;
+  }
+
+  .forum-editor-content p + p,
+  .forum-editor-content ul + p,
+  .forum-editor-content ol + p,
+  .forum-editor-content blockquote + p {
+    margin-top: 0.75rem;
+  }
+
+  .forum-editor-content ul,
+  .forum-editor-content ol {
+    @apply pl-6;
+  }
+
+  .forum-editor-content ul {
+    list-style: disc;
+  }
+
+  .forum-editor-content ol {
+    list-style: decimal;
+  }
+
+  .forum-editor-content blockquote {
+    @apply border-l-2 border-primary/50 pl-3 italic text-muted-foreground;
+  }
+
+  .forum-editor-content a {
+    @apply text-primary underline underline-offset-4;
+  }
+
   .glass-popover {
     border-color: var(--glass-border);
     background: color-mix(in oklch, var(--material-thick) 94%, transparent);

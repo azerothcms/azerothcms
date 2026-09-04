@@ -166,7 +166,7 @@ export default async function ForumsPage() {
 
       <div className="mt-8 flex items-start gap-3 rounded-2xl border border-primary/20 bg-primary/6 p-5 text-sm leading-6 text-muted-foreground">
         <MessageCircle className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-        <p>论坛发帖、回复、审核与通知将在后续接入真实用户系统；当前操作仅用于验证交互闭环。</p>
+        <p>论坛发帖和回复会保存在当前浏览器，用于验证 Mock 交互闭环；真实审核与通知将在接入用户系统后开放。</p>
       </div>
     </div>
   )

@@ -74,7 +74,7 @@ export default async function ForumThreadPage({ params }: ForumThreadPageProps) 
         </CardFooter>
       </Card>
 
-      <ForumThreadActions />
+      <ForumThreadActions threadSlug={thread.slug} />
     </div>
   )
 }

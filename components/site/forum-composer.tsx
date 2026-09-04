@@ -1,30 +1,46 @@
 "use client"
 
 import { ArrowRight, MessageSquarePlus, X } from "lucide-react"
-import { FormEvent, useState } from "react"
+import { FormEvent, useState, useSyncExternalStore } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { GlassNotice } from "@/components/ui/glass-notice"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { ForumEditor, getEditorText } from "@/components/site/forum-editor"
 import { copy } from "@/lib/i18n"
+import {
+  getMockForumServerSnapshot,
+  getMockTopicSnapshot,
+  readMockTopic,
+  subscribeMockTopic,
+  writeMockTopic,
+} from "@/lib/mock-forum-storage"
 
 export function ForumComposer() {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState("")
   const [message, setMessage] = useState("")
   const [status, setStatus] = useState("")
+  const topicSnapshot = useSyncExternalStore(
+    subscribeMockTopic,
+    getMockTopicSnapshot,
+    getMockForumServerSnapshot
+  )
+  const submittedTopic = topicSnapshot ? readMockTopic() : null
   const hasError = Boolean(status && status !== copy.forum.topicSuccess)
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!title.trim() || !message.trim()) {
+    const body = getEditorText(message)
+    if (!title.trim() || !body) {
       setStatus("请填写主题标题和内容。")
       return
     }
 
+    const topic = { title: title.trim(), body }
+    writeMockTopic(topic)
     setStatus(copy.forum.topicSuccess)
     setTitle("")
     setMessage("")
@@ -44,49 +60,77 @@ export function ForumComposer() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="eyebrow">New discussion</p>
-          <h2 className="mt-2 text-xl font-semibold text-foreground">{copy.forum.newTopicTitle}</h2>
+          <h2 className="mt-2 text-xl font-semibold text-foreground">
+            {copy.forum.newTopicTitle}
+          </h2>
         </div>
-        <Button variant="ghost" size="icon" aria-label="关闭发布主题" onClick={() => setOpen(false)}>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="关闭发布主题"
+          onClick={() => setOpen(false)}
+        >
           <X className="size-4" aria-hidden="true" />
         </Button>
       </div>
+      {submittedTopic ? (
+        <div
+          className="mt-5 rounded-xl border border-primary/20 bg-primary/6 p-4"
+          aria-live="polite"
+        >
+          <p className="eyebrow">{copy.forum.topicPreview}</p>
+          <h3 className="mt-2 font-medium text-foreground">
+            {submittedTopic.title}
+          </h3>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            {submittedTopic.body}
+          </p>
+        </div>
+      ) : null}
       <form className="mt-5 flex flex-col gap-4" onSubmit={handleSubmit}>
         <FieldGroup>
           <Field data-invalid={hasError}>
-            <FieldLabel htmlFor="forum-topic-title">{copy.forum.topicTitle}</FieldLabel>
+            <FieldLabel htmlFor="forum-topic-title">
+              {copy.forum.topicTitle}
+            </FieldLabel>
             <Input
-            id="forum-topic-title"
-            className="field-input"
-            value={title}
-            onChange={(event) => {
-              setTitle(event.target.value)
-              setStatus("")
-            }}
-            placeholder={copy.forum.topicTitlePlaceholder}
-            aria-invalid={hasError || undefined}
+              id="forum-topic-title"
+              className="field-input"
+              value={title}
+              onChange={(event) => {
+                setTitle(event.target.value)
+                setStatus("")
+              }}
+              placeholder={copy.forum.topicTitlePlaceholder}
+              aria-invalid={hasError || undefined}
             />
           </Field>
           <Field data-invalid={hasError}>
-            <FieldLabel htmlFor="forum-topic-message">{copy.forum.topicContent}</FieldLabel>
-            <Textarea
-            id="forum-topic-message"
-            className="field-input min-h-32 resize-y py-3"
-            value={message}
-            onChange={(event) => {
-              setMessage(event.target.value)
-              setStatus("")
-            }}
-            placeholder={copy.forum.topicContentPlaceholder}
-            aria-invalid={hasError || undefined}
+            <FieldLabel htmlFor="forum-topic-message">
+              {copy.forum.topicContent}
+            </FieldLabel>
+            <ForumEditor
+              id="forum-topic-message"
+              value={message}
+              onChange={(value) => {
+                setMessage(value)
+                setStatus("")
+              }}
+              placeholder={copy.forum.topicContentPlaceholder}
+              invalid={hasError}
             />
           </Field>
         </FieldGroup>
         <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
           {status ? (
-            <GlassNotice tone={status === copy.forum.topicSuccess ? "success" : "error"}>
+            <GlassNotice
+              tone={status === copy.forum.topicSuccess ? "success" : "error"}
+            >
               {status}
             </GlassNotice>
-          ) : <span />}
+          ) : (
+            <span />
+          )}
           <Button type="submit">
             {copy.forum.publishTopic}
             <ArrowRight data-icon="inline-end" aria-hidden="true" />
